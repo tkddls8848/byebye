@@ -4,12 +4,136 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
-    <meta name="description" content="자산과 저축, 은퇴 후 지출로 은퇴 가능 시점을 계산하고 예적금 상품을 비교하세요." />
-    <title>FIRE 계산기</title>
-    <link rel="icon" href="data:," />
+    <meta name="theme-color" content="#12141a" />
+    <title>FIRE 계산기 — 은퇴 가능 시점 계산과 예적금 금리 비교</title>
+
+    <!--
+      아래 표식 사이는 Worker(`worker/meta.ts`)가 갈아 끼운다. 공유 링크에 결과가
+      담겨 있으면 그 결과의 글귀로, 아니면 여기 적힌 그대로 나간다. 표식을 지우면
+      미리보기가 기본값으로 굳으니 함께 옮길 것.
+    -->
+    <!--meta:start-->
+    <meta
+      name="description"
+      content="자산·저축·은퇴 후 지출을 넣으면 은퇴 가능 시점을 달 단위로 모의 실험해 알려 줍니다. 금융감독원 공시 예적금 금리도 함께 비교합니다."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FIRE 계산기" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:title" content="FIRE 계산기 — 나는 몇 살에 은퇴할 수 있을까" />
+    <meta
+      property="og:description"
+      content="자산·저축·은퇴 후 지출을 넣으면 은퇴 가능 시점을 달 단위로 모의 실험해 알려 줍니다."
+    />
+    <meta property="og:image" content="/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!--meta:end-->
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "name": "FIRE 계산기",
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "웹 브라우저",
+            "inLanguage": "ko-KR",
+            "description": "자산·저축·은퇴 후 지출을 바탕으로 은퇴 가능 시점을 월 단위로 모의 실험하고, 금융감독원 공시 예적금 금리를 비교하는 무료 웹 계산기.",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "FIRE 계산기는 무엇을 계산하나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "은퇴 시점부터 기대 수명까지 매달 물가 상승분만큼 늘어난 지출을 빼고, 남은 자산을 세후 수익률로 굴리고, 국민연금이 나오기 시작하면 그만큼 덜 인출하는 월 단위 모의 실험을 돌립니다. 마지막 달까지 자산이 남으면 은퇴 가능으로 판정합니다."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "4% 룰(25배 법칙)과 무엇이 다른가요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "4% 룰은 미국 주식·채권 60/40 포트폴리오를 30년 굴린 연구에서 나온 어림값입니다. 예금·적금·채권 위주의 한국 자산, 국내 물가, 이자소득세 15.4%, 65세부터 나오는 국민연금은 그 전제와 다릅니다. 이 계산기는 25배를 참고 지표로만 보여 주고 판정은 모의 실험으로 합니다."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "입력한 금액이 서버에 저장되나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "계산은 브라우저 안에서만 이루어지고 입력값은 이 브라우저에만 남습니다. 다만 결과 공유 링크를 직접 만들면 그 링크 주소에 입력값이 담기며, 미리보기 카드를 만들기 위해 서버가 그 주소를 읽습니다."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "예적금 금리는 어디서 가져오나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "금융감독원 금융상품 통합 비교공시(finlife.fss.or.kr)에서 가져옵니다. 공시는 한 달에 한 번 갱신되며, 실제 적용 금리·한도·우대조건은 해당 금융회사에서 확인해야 합니다."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+
+    <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <main id="fire-root" class="fire shell"></main>
-    <script type="module" src="/src/main.ts"></script>
+    <!--
+      아래 내용은 자바스크립트가 붙는 순간 계산기 화면으로 바뀐다(`view.ts` 의
+      `replaceChildren`). 지우면 안 된다 — 네이버·카카오의 수집기는 자바스크립트를
+      돌리지 않아서, 이 글이 없으면 이 쪽을 **빈 문서**로 읽는다.
+    -->
+    <main id="fire-root" class="fire shell">
+      <header class="page__head">
+        <h1>FIRE 계산기</h1>
+        <p class="lede">자산과 저축, 은퇴 후 지출로 나의 은퇴 가능 시점을 확인하세요.</p>
+      </header>
+
+      <div class="intro">
+        <p>
+          지금 모은 돈과 매달 저축액, 은퇴 후 쓸 돈을 넣으면 <strong>몇 살에 은퇴할 수 있는지</strong> 달 단위로
+          모의 실험해 알려 주는 무료 계산기입니다. 물가 상승, 이자·배당 원천징수 15.4%, 금융소득 종합과세,
+          국민연금 수령 시점까지 함께 셈합니다.
+        </p>
+        <ul>
+          <li>은퇴 가능 시점, 목표 나이의 예상 자산과 필요 자산, 부족액을 한눈에 봅니다.</li>
+          <li>나이에 따른 자산 추이 그래프를 항상 함께 그립니다.</li>
+          <li>금융감독원 공시 기준 정기예금·적금 금리를 비교합니다.</li>
+          <li>결과를 링크로 만들어 공유할 수 있습니다.</li>
+        </ul>
+        <p class="intro__note">
+          잠시 뒤 계산기가 이 자리에 나타납니다. 자바스크립트가 꺼져 있으면 계산 기능은 쓸 수 없습니다.
+        </p>
+      </div>
+
+      <nav class="intro__links" aria-label="안내 문서">
+        <h2>읽을거리</h2>
+        <ul>
+          <li><a href="/guide/fire-calculator">FIRE 계산기 사용법과 계산 기준</a></li>
+          <li><a href="/guide/4-percent-rule">4% 룰과 안전인출률, 한국에서는 몇 %가 맞을까</a></li>
+          <li><a href="/guide/deposit-rate">예금·적금 금리 비교하는 법</a></li>
+        </ul>
+      </nav>
+
+      <footer class="page__foot">
+        <p>
+          셈은 이 브라우저 안에서만 이루어집니다. 넣은 숫자는 이 브라우저에만 남고, 결과 공유 링크를 직접 만들 때만
+          그 주소에 담깁니다. 투자 권유가 아닙니다.
+        </p>
+      </footer>
+    </main>
   </body>
 </html>

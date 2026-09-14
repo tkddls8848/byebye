@@ -11,42 +11,12 @@
  */
 import './fire.css';
 
-import { FireInput, FireResult, Man, calculate, defaultInput } from './model';
+import { formatAge, formatMan, formatShort } from './format';
+import { FireInput, FireResult, calculate, defaultInput } from './model';
 import { mountProducts } from './products-view';
+import { SHARE_PARAM, decodeShare, encodeShare, shareMeta } from './share';
 
 const STORAGE_KEY = 'fire-input-v1';
-
-// --- 서식 -------------------------------------------------------------------
-
-/** 만원 단위 숫자를 한국 사람이 읽는 대로 적는다. */
-export function formatMan(man: Man): string {
-  const value = Math.round(Math.max(0, man));
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(1)}경원`;
-  if (value >= 10_000) {
-    const eok = Math.floor(value / 10_000);
-    const rest = value % 10_000;
-    const head = eok >= 10_000 ? `${(eok / 10_000).toFixed(1)}조` : `${eok.toLocaleString()}억`;
-    return rest > 0 && eok < 10_000 ? `${head} ${rest.toLocaleString()}만원` : `${head}원`;
-  }
-  return `${value.toLocaleString()}만원`;
-}
-
-/** 축 눈금처럼 자리가 좁은 곳에 쓰는 짧은 표기. */
-function formatShort(man: Man): string {
-  const value = Math.max(0, man);
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(1)}경`;
-  if (value >= 1_000_000) return `${(value / 100_000_000 * 10_000).toFixed(0)}조`;
-  if (value >= 10_000) return `${(value / 10_000).toFixed(value >= 100_000 ? 0 : 1)}억`;
-  return `${Math.round(value).toLocaleString()}만`;
-}
-
-/** 개월 수를 나이로 적는다. */
-function formatAge(baseAge: number, months: number): string {
-  const total = baseAge * 12 + months;
-  const years = Math.floor(total / 12);
-  const rest = Math.round(total % 12);
-  return rest === 0 ? `${years}세` : `${years}세 ${rest}개월`;
-}
 
 // --- 입력 항목 ---------------------------------------------------------------
 
@@ -229,12 +199,19 @@ function numberInput(id: string, value: number, step: number, min: number): HTML
 }
 
 export function mountFire(root: HTMLElement): void {
-  const input = load();
+  const { input, shared } = load();
   const rows: Array<{ field: Field; row: HTMLElement }> = [];
   let redraw = (): void => {};
+  // 처음 그리는 것은 사람이 고친 게 아니다. 여기서 저장하면 남의 링크를 열어 본
+  // 것만으로 내 숫자가 지워진다.
+  let untouched = true;
 
   const changed = (): void => {
-    save(input);
+    if (untouched) untouched = false;
+    else {
+      forgetSharedUrl();
+      save(input);
+    }
     for (const { field, row } of rows) {
       row.hidden = field.shownWhen ? !field.shownWhen(input) : false;
     }
@@ -400,6 +377,8 @@ export function mountFire(root: HTMLElement): void {
     Object.assign(input, defaultInput());
     root.replaceChildren();
     clear();
+    // 주소에 결과가 남아 있으면 다시 그릴 때 그것이 또 올라온다.
+    forgetSharedUrl();
     mountFire(root);
   });
   form.append(reset);
@@ -418,6 +397,11 @@ export function mountFire(root: HTMLElement): void {
   const lede = create('p', 'lede');
   lede.textContent = '자산과 저축, 은퇴 후 지출로 나의 은퇴 가능 시점을 확인하세요.';
   head.append(lede);
+  if (shared) {
+    head.append(
+      create('p', 'note note--muted', '공유된 결과를 보고 있습니다. 값을 고치면 그때부터 내 결과가 됩니다.'),
+    );
+  }
 
   // 상품 비교는 제목 바로 아래에서 발견하고 펼칠 수 있다.
   // 세율 하나만 건네고 반대 방향으로는 아무것도 흐르지 않는다.
@@ -430,7 +414,7 @@ export function mountFire(root: HTMLElement): void {
     create(
       'p',
       '',
-      '셈은 이 브라우저 안에서만 이루어집니다. 넣은 숫자는 서버로 가지 않고 이 브라우저에만 남습니다. ' +
+      '셈은 이 브라우저 안에서만 이루어집니다. 넣은 숫자는 이 브라우저에만 남고, 결과 공유 링크를 직접 만들 때만 그 주소에 담깁니다. ' +
         '세금은 이자·배당 원천징수 15.4% 를 기본으로 보며, 실제 세액과 수익률은 상품과 상황에 따라 다릅니다. 투자 권유가 아닙니다.',
     ),
   );
@@ -569,7 +553,85 @@ function drawResult(root: HTMLElement, input: FireInput, result: FireResult): vo
   details.append(content);
   const chartTable = graph.querySelector<HTMLDetailsElement>('details');
   if (chartTable) chartTable.open = tableExpanded;
-  root.replaceChildren(box, graph, details);
+  root.replaceChildren(box, graph, details, shareBox(input, result));
+}
+
+// --- 공유 -------------------------------------------------------------------
+
+/** 지금 화면의 결과를 그대로 여는 주소. */
+function shareUrl(input: FireInput): string {
+  const url = new URL(location.pathname, location.origin);
+  url.searchParams.set(SHARE_PARAM, encodeShare(input));
+  return url.toString();
+}
+
+/**
+ * 결과를 남에게 건네는 칸.
+ *
+ * 계산기가 퍼지는 길은 검색이 아니라 "나 이거 해 봤는데" 하고 건네는 링크다.
+ * 그래서 건넬 물건을 결과 바로 아래에 둔다 — 답을 본 그 자리가 남에게 보여 주고
+ * 싶어지는 자리다.
+ *
+ * 입력이 바뀔 때마다 이 칸도 다시 만들어진다. 주소를 손에 든 동안 화면의 숫자가
+ * 바뀌어 서로 어긋나는 일이 없어야 한다.
+ */
+function shareBox(input: FireInput, result: FireResult): HTMLElement {
+  const section = create('section', 'share');
+  section.append(create('h2', 'share__title', '결과 공유'));
+  section.append(
+    create(
+      'p',
+      'share__note',
+      '이 주소에는 지금 넣은 숫자가 담깁니다. 받은 사람은 같은 결과를 바로 보고, 미리보기 카드를 만드는 동안 서버가 주소를 한 번 읽습니다. 누르지 않으면 숫자는 이 브라우저를 벗어나지 않습니다.',
+    ),
+  );
+
+  const address = shareUrl(input);
+  const state = create('p', 'share__state');
+  state.setAttribute('role', 'status');
+
+  const field = create('input', 'share__link');
+  field.type = 'text';
+  field.readOnly = true;
+  field.value = address;
+  field.setAttribute('aria-label', '결과 공유 주소');
+  field.addEventListener('focus', () => field.select());
+
+  const row = create('div', 'share__row');
+  const copy = create('button', 'share__copy', '링크 복사');
+  copy.type = 'button';
+  copy.addEventListener('click', () => {
+    void navigator.clipboard
+      ?.writeText(address)
+      .then(() => {
+        state.textContent = '링크를 복사했습니다.';
+      })
+      .catch(() => {
+        // 권한이 없거나 안전한 연결이 아닌 곳이다. 직접 복사할 수 있게 띄워 준다.
+        field.focus();
+        state.textContent = '복사가 막혀 있습니다. 아래 주소를 직접 복사하세요.';
+      });
+    if (!navigator.clipboard) {
+      field.focus();
+      state.textContent = '이 브라우저는 자동 복사를 지원하지 않습니다. 아래 주소를 직접 복사하세요.';
+    }
+  });
+  row.append(copy);
+
+  if (typeof navigator.share === 'function') {
+    const send = create('button', 'share__send', '공유하기');
+    send.type = 'button';
+    send.addEventListener('click', () => {
+      const meta = shareMeta(input, result);
+      void navigator.share({ title: meta.title, text: meta.description, url: address }).catch(() => {
+        // 사용자가 공유 창을 닫은 경우가 대부분이다. 알릴 것이 없다.
+      });
+    });
+    row.append(send);
+  }
+
+  section.append(row, field, state);
+  return section;
 }
 
 // --- 그래프 -----------------------------------------------------------------
@@ -724,17 +786,39 @@ function chart(input: FireInput, result: FireResult): HTMLElement {
 
 // --- 저장 -------------------------------------------------------------------
 
-function load(): FireInput {
+/**
+ * 무엇을 띄울지 고른다.
+ *
+ * 주소에 결과가 담겨 있으면 그것이 먼저다 — 남이 보낸 링크를 열었는데 내 옛 숫자가
+ * 뜨면 링크를 보낸 뜻이 없어진다. 담긴 게 없을 때만 이 브라우저에 남은 것을 쓴다.
+ */
+function load(): { input: FireInput; shared: boolean } {
+  const shared = decodeShare(new URLSearchParams(location.search).get(SHARE_PARAM));
+  if (shared) return { input: shared, shared: true };
+
   const fallback = defaultInput();
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return fallback;
+    if (!saved) return { input: fallback, shared: false };
     const parsed = JSON.parse(saved) as Partial<FireInput>;
     // 항목이 늘어난 뒤에도 예전 저장본이 열리도록 기본값 위에 덮는다.
-    return { ...fallback, ...parsed };
+    return { input: { ...fallback, ...parsed }, shared: false };
   } catch {
-    return fallback;
+    return { input: fallback, shared: false };
   }
+}
+
+/**
+ * 주소에서 공유된 결과를 떼어 낸다.
+ *
+ * 남의 링크를 열어 값을 하나라도 고치면 주소에 남은 결과는 더 이상 화면과 같지
+ * 않다. 그대로 두면 그 주소를 다시 퍼뜨릴 때 남의 숫자를 내 것처럼 보내게 된다.
+ */
+function forgetSharedUrl(): void {
+  const url = new URL(location.href);
+  if (!url.searchParams.has(SHARE_PARAM)) return;
+  url.searchParams.delete(SHARE_PARAM);
+  history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
 function save(input: FireInput): void {

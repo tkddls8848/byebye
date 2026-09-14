@@ -711,3 +711,66 @@
   color: var(--muted);
   font-size: 0.76rem;
 }
+
+/* 결과 공유. 답 바로 아래에 두고, 담기는 것이 무엇인지 함께 적는다. */
+.share {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.share__title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.share__note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.share__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.share__copy {
+  min-height: 44px;
+  color: var(--accent-text);
+  background: var(--accent);
+  font-size: 0.85rem;
+}
+
+.share__send {
+  min-height: 44px;
+  color: var(--text);
+  background: transparent;
+  border-color: var(--line);
+  font-size: 0.85rem;
+}
+
+.share__link {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0.4rem 0.6rem;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.share__state {
+  margin: 0;
+  min-height: 1.2em;
+  color: var(--ok);
+  font-size: 0.8rem;
+}

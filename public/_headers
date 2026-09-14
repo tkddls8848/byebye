@@ -3,7 +3,27 @@
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY
   Cross-Origin-Opener-Policy: same-origin
-  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'
 
 /index.html
   Cache-Control: no-store
+
+# 공유 링크마다 미리보기 글귀가 달라진다. 앞단에 굳어 버리면 남의 결과가 뜬다.
+/
+  Cache-Control: no-store
+
+# 그림과 아이콘은 이름이 바뀌지 않는 한 같은 파일이다.
+/og.png
+  Cache-Control: public, max-age=86400
+/og-possible.png
+  Cache-Control: public, max-age=86400
+/og-late.png
+  Cache-Control: public, max-age=86400
+/og-impossible.png
+  Cache-Control: public, max-age=86400
+/favicon.svg
+  Cache-Control: public, max-age=86400
+/apple-touch-icon.png
+  Cache-Control: public, max-age=86400
+/icon-512.png
+  Cache-Control: public, max-age=86400

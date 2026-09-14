@@ -1,0 +1,95 @@
+/*
+  안내 문서의 모양.
+
+  계산기 화면(`src/styles.css`)과 색은 같게 두되 파일은 따로 둔다. 안내 문서는
+  Vite 를 거치지 않는 정적 HTML 이고, 자바스크립트 없이 글만 읽히면 되는 쪽이다.
+*/
+:root {
+  color-scheme: dark;
+  --bg: #12141a;
+  --surface: #1b1f27;
+  --text: #e7eaf0;
+  --muted: #99a1b3;
+  --line: #2f3542;
+  --accent: #7aa2f7;
+  --accent-text: #10131a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.75 "Malgun Gothic", "맑은 고딕", system-ui, -apple-system, sans-serif;
+}
+
+.doc {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.doc__nav { margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--muted); }
+.doc__nav a { color: var(--accent); }
+
+h1 { margin: 0 0 0.5rem; font-size: 1.55rem; line-height: 1.35; }
+h2 { margin: 2rem 0 0.6rem; font-size: 1.15rem; }
+h3 { margin: 1.4rem 0 0.4rem; font-size: 1rem; }
+p, ul, ol { margin: 0 0 0.9rem; }
+ul, ol { padding-left: 1.3rem; }
+li { margin-bottom: 0.35rem; }
+a { color: var(--accent); }
+strong { color: #fff; }
+
+.doc__lede {
+  margin-bottom: 1.5rem;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.doc__cta {
+  display: inline-block;
+  margin: 0.5rem 0 1.5rem;
+  padding: 0.7rem 1.2rem;
+  color: var(--accent-text);
+  background: var(--accent);
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+table {
+  width: 100%;
+  margin: 0 0 1rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+th, td {
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+th { color: var(--muted); font-weight: 600; }
+
+.doc__table-wrap { overflow-x: auto; }
+
+.doc__note {
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.doc__foot {
+  margin-top: 2.5rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.doc__foot p { margin: 0 0 0.4rem; }
+
+.doc__note p:last-child { margin-bottom: 0; }

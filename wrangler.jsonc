@@ -11,7 +11,17 @@
     "directory": "dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    // Worker가 먼저 받는 길: 금융감독원 중계, 검색엔진에 알리는 두 파일,
+    // 그리고 링크 미리보기 글귀를 갈아 끼워야 하는 HTML.
+    "run_worker_first": [
+      "/api/*",
+      "/",
+      "/index.html",
+      "/guide",
+      "/guide/*",
+      "/robots.txt",
+      "/sitemap.xml"
+    ]
   },
   "observability": {
     "enabled": true,

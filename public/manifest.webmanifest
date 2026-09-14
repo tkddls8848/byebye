@@ -1,0 +1,20 @@
+{
+  "name": "FIRE 계산기",
+  "short_name": "FIRE 계산기",
+  "description": "자산·저축·은퇴 후 지출로 은퇴 가능 시점을 계산하고 금융감독원 공시 예적금 금리를 비교합니다.",
+  "lang": "ko-KR",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#12141a",
+  "theme_color": "#12141a",
+  "categories": ["finance", "productivity", "utilities"],
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
