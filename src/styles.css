@@ -1,0 +1,54 @@
+:root {
+  color-scheme: dark;
+  --bg: #12141a;
+  --surface: #1b1f27;
+  --text: #e7eaf0;
+  --muted: #99a1b3;
+  --line: #2f3542;
+  --accent: #7aa2f7;
+  --accent-text: #10131a;
+  --danger: #ff8f85;
+  --danger-bg: #3a1f1d;
+  --ok: #6fcf97;
+  accent-color: var(--accent);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.6 "Malgun Gothic", "맑은 고딕", system-ui, -apple-system, sans-serif;
+}
+.shell { max-width: 76rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+h1 { margin: 0 0 0.35rem; font-size: 1.6rem; }
+.lede { margin: 0 0 1rem; color: var(--muted); }
+button {
+  padding: 0.6rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.products__load { color: var(--accent-text); background: var(--accent); }
+.products__load:disabled { opacity: 0.5; cursor: default; }
+.page__foot {
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.page__foot p { margin: 0 0 0.4rem; }
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
