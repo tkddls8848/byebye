@@ -1,7 +1,7 @@
 /* FIRE 계산기. 색과 글꼴은 styles.css 의 것을 그대로 쓴다. */
 
 .fire {
-  --warn: #ffb86c;
+  --warn: #94621e;
 }
 
 .fire .lede {
@@ -12,10 +12,10 @@
 .fire__input-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.3rem;
+  gap: 0.25rem;
   padding: 0.3rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: #ebeee9;
+  border: 0;
   border-radius: 10px;
 }
 
@@ -28,8 +28,9 @@
 }
 
 .fire__input-tab[aria-selected='true'] {
-  color: var(--accent-text);
-  background: var(--accent);
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 1px 3px #242c2910;
 }
 
 .fire__auto-note {
@@ -83,10 +84,11 @@
 }
 
 .fire__disclosure {
-  padding: 0.7rem 0.85rem;
+  padding: 1rem 0;
   color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
   border-radius: 8px;
   font-size: 0.9rem;
   cursor: pointer;
@@ -102,14 +104,16 @@
 }
 
 .fire__products-more {
-  margin-bottom: 1.25rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
 }
 
 .fire__products-more > .fire__disclosure {
   color: var(--accent);
-  font-weight: 700;
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  font-weight: 600;
+  border-color: var(--line);
+  border-radius: 0;
+  background: transparent;
 }
 
 .fire__guide {
@@ -123,7 +127,7 @@
 .fire__body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.5rem;
+  gap: 3.5rem;
   align-items: start;
 }
 
@@ -160,7 +164,7 @@
   .fire .field--bool {
     grid-template-columns: auto minmax(0, 1fr);
   }
-  .fire .card { padding: 0.75rem; min-width: 0; }
+  .fire .card { padding: 0.75rem 0 1.25rem; min-width: 0; }
   .fire .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .fire .stat__value { font-size: 1rem; overflow-wrap: anywhere; }
   .fire .assets { column-gap: 0.3rem; grid-template-columns: 2.5rem repeat(3, minmax(0, 1fr)); }
@@ -171,21 +175,24 @@
 
 .fire__form {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
   min-width: 0;
 }
 
 .card {
   margin: 0;
-  padding: 1rem 1.1rem 1.1rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  min-width: 0;
+  padding: 1rem 0 1.5rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
 }
 
 .card__title {
-  padding: 0 0.35rem;
-  font-weight: 700;
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
 }
 
 .card__note {
@@ -199,11 +206,11 @@
   grid-template-columns: minmax(0, 1fr) 9.5rem;
   gap: 0.4rem 0.75rem;
   align-items: center;
-  padding: 0.3rem 0;
+  padding: 0.65rem 0;
 }
 
 .field + .field {
-  border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  border-top: 0;
 }
 
 /* display 를 준 요소는 hidden 속성만으로 숨지 않는다. 뜻이 없는 항목
@@ -246,12 +253,13 @@
 
 .fire input[type='number'] {
   width: 100%;
-  padding: 0.4rem 0.55rem;
+  min-height: 42px;
+  padding: 0.5rem 0.65rem;
   font: inherit;
   font-variant-numeric: tabular-nums;
   text-align: right;
   color: var(--text);
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 6px;
 }
@@ -307,37 +315,39 @@
 
 .fire__reset {
   justify-self: start;
+  padding-left: 0;
   background: transparent;
   color: var(--muted);
-  border-color: var(--line);
+  border-color: transparent;
   font-size: 0.85rem;
 }
 
 /* --- 결과 ------------------------------------------------------------------ */
 
 .verdict {
-  padding: 1rem 1.1rem;
+  padding: 1.75rem;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--muted);
-  border-radius: 12px;
+  border-top: 3px solid var(--muted);
+  border-radius: 14px;
 }
 
 .verdict[data-tone='ok'] {
-  border-left-color: var(--ok);
+  border-top-color: var(--ok);
 }
 
 .verdict[data-tone='warn'] {
-  border-left-color: var(--warn);
+  border-top-color: var(--warn);
 }
 
 .verdict[data-tone='bad'] {
-  border-left-color: var(--danger);
+  border-top-color: var(--danger);
 }
 
 .verdict__badge {
   display: block;
-  font-size: 1.3rem;
+  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+  letter-spacing: -0.035em;
 }
 
 .verdict[data-tone='ok'] .verdict__badge {
@@ -353,23 +363,25 @@
 }
 
 .verdict__line {
-  margin: 0.4rem 0 0;
-  color: var(--text);
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem;
+  gap: 0;
 }
 
 .stat {
   display: grid;
   gap: 0.15rem;
-  padding: 0.7rem 0.8rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  padding: 1.1rem 0.75rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
 }
 
 .stat__label {
@@ -585,10 +597,11 @@
 }
 
 .products select {
-  padding: 0.4rem 0.55rem;
+  min-height: 42px;
+  padding: 0.5rem 0.65rem;
   font: inherit;
   color: var(--text);
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 6px;
 }
@@ -716,10 +729,11 @@
 .share {
   display: grid;
   gap: 0.5rem;
-  padding: 0.9rem 1rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  padding: 1rem 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
 }
 
 .share__title {
@@ -761,7 +775,7 @@
   min-height: 40px;
   padding: 0.4rem 0.6rem;
   color: var(--muted);
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   font: inherit;

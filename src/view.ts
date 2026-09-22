@@ -80,7 +80,7 @@ const ASSET_ROWS = [
 
 const SECTIONS: Section[] = [
   {
-    title: '나',
+    title: '나의 은퇴 계획',
     fields: [
       num('age', '지금 나이', '세', 1, (i) => i.age, (i, v) => (i.age = v)),
       num('retireAge', '은퇴하고 싶은 나이', '세', 1, (i) => i.retireAge, (i, v) => (i.retireAge = v)),
@@ -312,7 +312,7 @@ export function mountFire(root: HTMLElement): void {
   const assetCard = create('fieldset', 'card');
   assetCard.append(create('legend', 'card__title', '모은 돈'));
   assetCard.append(
-    create('p', 'card__note', '자산군마다 금액과 이율을 따로 적습니다. 마지막 칸은 매달 저축하는 돈을 어디에 넣을지의 비율이고, 합이 100% 가 되어야 합니다.'),
+    create('p', 'card__note', '금액과 이율을 입력하세요. 월 저축 배분의 합은 100%입니다.'),
   );
   const table = create('div', 'assets');
   table.append(
@@ -393,6 +393,7 @@ export function mountFire(root: HTMLElement): void {
   const head = create('header', 'page__head');
   // 탭 이름과 창 제목은 "계산기" 다 — 옆에서 잠깐 보는 사람에게 굳이 띄울
   // 이름이 아니다. 열고 들어온 사람에게는 제 이름을 밝힌다.
+  head.append(create('p', 'page__eyebrow', 'PLAN YOUR FREEDOM'));
   head.append(create('h1', '', 'FIRE 계산기'));
   const lede = create('p', 'lede');
   lede.textContent = '자산과 저축, 은퇴 후 지출로 나의 은퇴 가능 시점을 확인하세요.';
@@ -403,7 +404,7 @@ export function mountFire(root: HTMLElement): void {
     );
   }
 
-  // 상품 비교는 제목 바로 아래에서 발견하고 펼칠 수 있다.
+  // 상품 비교는 계산 조건과 결과를 확인한 뒤 펼칠 수 있다.
   // 세율 하나만 건네고 반대 방향으로는 아무것도 흐르지 않는다.
   const products = create('section', 'fire__products');
   const productsMore = create('details', 'fire__products-more');
@@ -429,7 +430,7 @@ export function mountFire(root: HTMLElement): void {
 
   const guide = create('details', 'fire__guide');
   guide.append(create('summary', 'more__summary', '계산 기준과 데이터 안내'), foot);
-  root.replaceChildren(head, productsMore, body, guide);
+  root.replaceChildren(head, body, productsMore, guide);
   mountProducts(products, () => input.taxRate);
 
   redraw = () => drawResult(result, input, calculate(input));
