@@ -27,6 +27,7 @@
  */
 import { formatAge, formatMan } from './format';
 import { FireInput, FireResult, defaultInput } from './model';
+import { PLAN_ASSETS, planError, type ProductPlan } from './product-plan';
 
 /** 주소에 결과를 담을 때 쓰는 이름. */
 export const SHARE_PARAM = 's';
@@ -125,7 +126,17 @@ function short(value: number): string {
 
 /** 입력을 주소에 담을 수 있는 한 줄로 만든다. */
 export function encodeShare(input: FireInput): string {
-  return [VERSION, ...SLOTS.map((slot) => short(slot.get(input)))].join('_');
+  const hasPlans = PLAN_ASSETS.some((asset) => input.productPlans?.[asset]);
+  const base = [hasPlans ? 2 : VERSION, ...SLOTS.map((slot) => short(slot.get(input)))];
+  if (hasPlans) {
+    for (const asset of PLAN_ASSETS) {
+      const plan = input.productPlans?.[asset];
+      base.push(...(plan ? [plan.amount, plan.termMonths, plan.rate,
+        plan.rateType === 'compound' ? 1 : 0, plan.preferential ? 1 : 0, plan.maxLimit ?? -1]
+        : [0, 0, 0, 0, 0, -1]).map(short));
+    }
+  }
+  return base.join('_');
 }
 
 /**
@@ -138,7 +149,8 @@ export function encodeShare(input: FireInput): string {
 export function decodeShare(text: string | null | undefined): FireInput | null {
   if (!text || text.length > MAX_LENGTH) return null;
   const parts = text.split('_');
-  if (Number(parts[0]) !== VERSION || parts.length < 2) return null;
+  const version = Number(parts[0]);
+  if (![VERSION, 2].includes(version) || parts.length < 2) return null;
 
   const input = defaultInput();
   let filled = 0;
@@ -149,6 +161,31 @@ export function decodeShare(text: string | null | undefined): FireInput | null {
     if (!Number.isFinite(value) || value < slot.min || value > slot.max) continue;
     slot.set(input, value);
     filled += 1;
+  }
+  if (version === 2) {
+    if (parts.length !== 1 + SLOTS.length + 12) return null;
+    input.productPlans = {};
+    for (const [index, asset] of PLAN_ASSETS.entries()) {
+      const values = parts.slice(1 + SLOTS.length + index * 6, 1 + SLOTS.length + (index + 1) * 6);
+      if (values.some((value) => value === '' || !Number.isFinite(Number(value)))) return null;
+      const [amount, termMonths, rate, compound, preferential, limit] = values.map(Number) as [number, number, number, number, number, number];
+      if (amount === 0 && termMonths === 0) continue;
+      if (![0, 1].includes(compound) || ![0, 1].includes(preferential) || limit < -1) return null;
+      const plan: ProductPlan = {
+        company: '', name: '공유된 상품 조건', disclosureMonth: '', amount, termMonths, rate,
+        rateType: compound === 1 ? 'compound' : 'simple', preferential: preferential === 1,
+        maxLimit: limit === -1 ? null : limit,
+      };
+      // Preserve invalid funding/retirement selections so the UI can explain exclusions.
+      // Only structural corruption rejects the entire share.
+      const shapeInput = { ...input, age: 0, retireAge: 100,
+        deposit: { ...input.deposit, amount: 1e9 }, monthlySaving: 1e9, savingGrowth: 0,
+        installment: { ...input.installment, allocation: 100 },
+        bond: { ...input.bond, allocation: 0 }, equity: { ...input.equity, allocation: 0 } };
+      shapeInput.deposit.allocation = 0;
+      if (planError(shapeInput, asset, plan)) return null;
+      input.productPlans[asset] = plan;
+    }
   }
   return filled > 0 ? input : null;
 }

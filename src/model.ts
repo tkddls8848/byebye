@@ -32,6 +32,9 @@
  * 상승률을 세후로 낮춰 넣어야 한다. 화면이 그 주의를 함께 띄운다.
  */
 
+import { PLAN_ASSETS, PLAN_LABEL, planError, type ProductPlan, type PlanAsset } from './product-plan';
+import { interestOf } from './recommend';
+
 /** 만원. */
 export type Man = number;
 
@@ -57,6 +60,8 @@ export interface AssetInput {
 }
 
 export interface FireInput {
+  /** Selected contracts apply once, before retirement. Unselected balances retain their rates. */
+  productPlans?: Partial<Record<PlanAsset, ProductPlan>>;
   age: number;
   /** 은퇴하고 싶은 나이. */
   retireAge: number;
@@ -235,6 +240,16 @@ function normalize(raw: FireInput): { input: FireInput; warnings: string[] } {
     input.equity = { ...input.equity, allocation: input.equity.allocation * scale };
     warnings.push(`저축 배분 합이 ${Math.round(total)}% 라서 100% 로 맞춰 셈했습니다.`);
   }
+  if (raw.productPlans) {
+    input.productPlans = {};
+    for (const asset of PLAN_ASSETS) {
+      const plan = raw.productPlans[asset];
+      if (!plan) continue;
+      const error = planError(input, asset, plan);
+      if (error) warnings.push(`${PLAN_LABEL[asset]} 상품 적용 제외: ${error}`);
+      else input.productPlans[asset] = plan;
+    }
+  }
   return { input, warnings };
 }
 
@@ -268,10 +283,31 @@ function accumulate(input: FireInput, months: number): Balances[] {
     bond: Math.max(0, input.bond.amount),
     equity: Math.max(0, input.equity.amount),
   };
-  const path: Balances[] = [{ ...balances }];
+  const depositPlan = input.productPlans?.deposit;
+  const savingPlan = input.productPlans?.installment;
+  let lockedDeposit = depositPlan?.amount ?? 0;
+  let lockedSaving = 0;
   let yearIncome = 0;
+  balances.deposit -= lockedDeposit;
+  const snapshot = (): Balances => {
+    const point = { ...balances };
+    // Reserve unpaid annual tax when a contract matures before the retirement month.
+    // The running balances pay it at year-end; the snapshot must not lose it on retirement.
+    const liability = depositPlan || savingPlan ? extraTax(input, yearIncome) : 0;
+    const available = sum(point);
+    if (liability > 0 && available > 0) {
+      const keep = 1 - liability / available;
+      for (const asset of ['deposit', 'installment', 'bond', 'equity'] as const) point[asset] *= keep;
+    } else point.deposit -= liability;
+    point.deposit += lockedDeposit;
+    point.installment += lockedSaving;
+    return point;
+  };
+  const path: Balances[] = [snapshot()];
 
   for (let m = 0; m < months; m += 1) {
+    const payment = savingPlan && m < savingPlan.termMonths ? savingPlan.amount : 0;
+    lockedSaving += payment;
     yearIncome +=
       balances.deposit * rates.deposit +
       balances.installment * rates.installment +
@@ -285,31 +321,43 @@ function accumulate(input: FireInput, months: number): Balances[] {
       equity: balances.equity * (1 + rates.dividend * afterTax + rates.growth),
     };
 
+    // Contract interest is paid and taxed at maturity, not reinvested monthly.
+    for (const asset of PLAN_ASSETS) {
+      const plan = input.productPlans?.[asset];
+      if (!plan || m + 1 !== plan.termMonths) continue;
+      const interest = interestOf(asset === 'deposit' ? 'deposit' : 'saving', plan.amount,
+        plan.rate, plan.termMonths, plan.rateType);
+      yearIncome += interest;
+      balances[asset] += (asset === 'deposit' ? lockedDeposit : lockedSaving) + interest * afterTax;
+      if (asset === 'deposit') lockedDeposit = 0;
+      else lockedSaving = 0;
+    }
+
     if ((m + 1) % 12 === 0) {
       const bill = extraTax(input, yearIncome);
       yearIncome = 0;
       const total = sum(balances);
       if (bill > 0 && total > 0) {
         // 세금은 자산 구성대로 고르게 떼어 간다.
-        const keep = Math.max(0, 1 - bill / total);
+        const keep = 1 - bill / total;
         balances = {
           deposit: balances.deposit * keep,
           installment: balances.installment * keep,
           bond: balances.bond * keep,
           equity: balances.equity * keep,
         };
-      }
+      } else if (bill > 0) balances.deposit -= bill;
     }
 
     const saving =
       Math.max(0, input.monthlySaving) * Math.pow(1 + input.savingGrowth / 100, m / 12);
     balances = {
       deposit: balances.deposit + saving * share.deposit,
-      installment: balances.installment + saving * share.installment,
+      installment: balances.installment + saving * share.installment - payment,
       bond: balances.bond + saving * share.bond,
       equity: balances.equity + saving * share.equity,
     };
-    path.push({ ...balances });
+    path.push(snapshot());
   }
   return path;
 }
@@ -387,7 +435,8 @@ export function calculate(raw: FireInput): FireResult {
   // 가장 이른 은퇴 시점. 늦게 은퇴할수록 자산은 늘고 버틸 기간은 줄어드니
   // 한 번 통과하면 그 뒤로도 통과한다 — 처음 통과하는 달이 답이다.
   let earliestMonths: number | null = null;
-  for (let m = 0; m <= months - MIN_RETIREMENT_MONTHS; m += 1) {
+  const contractsEnd = Math.max(0, ...PLAN_ASSETS.map((asset) => input.productPlans?.[asset]?.termMonths ?? 0));
+  for (let m = contractsEnd; m <= months - MIN_RETIREMENT_MONTHS; m += 1) {
     const point = path[m];
     if (point && survive(input, m, point, months).survived) {
       earliestMonths = m;
@@ -451,6 +500,8 @@ function requiredMonthlySaving(
 ): Man | null {
   const ok = (saving: Man): boolean => {
     const trial: FireInput = { ...input, monthlySaving: saving };
+    const plan = trial.productPlans?.installment;
+    if (plan && planError(trial, 'installment', plan)) return false;
     const point = accumulate(trial, months)[retireMonth];
     return point ? survive(trial, retireMonth, point, months).survived : false;
   };

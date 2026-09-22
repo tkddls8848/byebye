@@ -14,6 +14,7 @@ import './fire.css';
 import { formatAge, formatMan, formatShort } from './format';
 import { FireInput, FireResult, calculate, defaultInput } from './model';
 import { mountProducts } from './products-view';
+import { PLAN_ASSETS, PLAN_LABEL, planError, withoutPlans } from './product-plan';
 import { SHARE_PARAM, decodeShare, encodeShare, shareMeta } from './share';
 
 const STORAGE_KEY = 'fire-input-v1';
@@ -202,6 +203,7 @@ export function mountFire(root: HTMLElement): void {
   const { input, shared } = load();
   const rows: Array<{ field: Field; row: HTMLElement }> = [];
   let redraw = (): void => {};
+  let refreshProducts = (): void => {};
   // 처음 그리는 것은 사람이 고친 게 아니다. 여기서 저장하면 남의 링크를 열어 본
   // 것만으로 내 숫자가 지워진다.
   let untouched = true;
@@ -216,6 +218,7 @@ export function mountFire(root: HTMLElement): void {
       row.hidden = field.shownWhen ? !field.shownWhen(input) : false;
     }
     redraw();
+    refreshProducts();
   };
 
   const form = create('form', 'fire__form');
@@ -374,6 +377,7 @@ export function mountFire(root: HTMLElement): void {
   const reset = create('button', 'fire__reset', '기본값으로 되돌리기');
   reset.type = 'button';
   reset.addEventListener('click', () => {
+    delete input.productPlans;
     Object.assign(input, defaultInput());
     root.replaceChildren();
     clear();
@@ -405,7 +409,7 @@ export function mountFire(root: HTMLElement): void {
   }
 
   // 상품 비교는 계산 조건과 결과를 확인한 뒤 펼칠 수 있다.
-  // 세율 하나만 건네고 반대 방향으로는 아무것도 흐르지 않는다.
+  // 상품별 조건은 기존 자산과 저축 안에서 충당하는 시나리오로 적용한다.
   const products = create('section', 'fire__products');
   const productsMore = create('details', 'fire__products-more');
   productsMore.append(create('summary', 'fire__disclosure', '예적금 상품 비교하기'), products);
@@ -431,9 +435,15 @@ export function mountFire(root: HTMLElement): void {
   const guide = create('details', 'fire__guide');
   guide.append(create('summary', 'more__summary', '계산 기준과 데이터 안내'), foot);
   root.replaceChildren(head, body, productsMore, guide);
-  mountProducts(products, () => input.taxRate);
+  refreshProducts = mountProducts(products, () => input.taxRate, (asset, plan) => {
+    const error = planError(input, asset, plan);
+    if (error) return error;
+    input.productPlans = { ...input.productPlans, [asset]: plan };
+    changed();
+    return null;
+  });
 
-  redraw = () => drawResult(result, input, calculate(input));
+  redraw = () => drawResult(result, input, calculate(input), () => changed());
   changed();
 }
 
@@ -466,7 +476,7 @@ function statTile(label: string, value: string, note?: string): HTMLElement {
   return tile;
 }
 
-function drawResult(root: HTMLElement, input: FireInput, result: FireResult): void {
+function drawResult(root: HTMLElement, input: FireInput, result: FireResult, changed: () => void): void {
   // 입력할 때마다 다시 그려도 사용자가 펼친 결과와 표를 유지한다.
   const previousDetails = root.querySelector<HTMLDetailsElement>('.fire__result-details');
   const expanded = previousDetails?.open ?? false;
@@ -554,7 +564,44 @@ function drawResult(root: HTMLElement, input: FireInput, result: FireResult): vo
   details.append(content);
   const chartTable = graph.querySelector<HTMLDetailsElement>('details');
   if (chartTable) chartTable.open = tableExpanded;
-  root.replaceChildren(box, graph, details, shareBox(input, result));
+  const plans = create('section', 'fire__plans');
+  const selected = PLAN_ASSETS.filter((asset) => input.productPlans?.[asset]);
+  if (selected.length) {
+    plans.append(create('h2', 'share__title', '상품 적용 시나리오'));
+    plans.append(create('p', 'note note--muted',
+      '선택한 기간에 한 번 가입하며 만기 이후에는 기존 수익률로 운용합니다. 은퇴 가능 시점은 모든 상품의 만기 이후부터 찾습니다.'));
+    for (const asset of selected) {
+      const plan = input.productPlans![asset]!;
+      const row = create('div', 'fire__plan');
+      row.append(create('strong', '', `${PLAN_LABEL[asset]} · ${plan.company} ${plan.name}`));
+      row.append(create('p', 'note',
+        `${asset === 'installment' ? '월 ' : ''}${formatMan(plan.amount)} · ${plan.termMonths}개월 · ` +
+        `${plan.preferential ? '우대' : '기본'} ${plan.rate}% · ${plan.rateType === 'compound' ? '월복리' : '단리'}`));
+      if (plan.disclosureMonth) row.append(create('p', 'note note--muted', `${plan.disclosureMonth} 공시 기준`));
+      const error = planError(input, asset, plan);
+      if (error) row.append(create('p', 'note note--bad', `적용 제외: ${error}`));
+      const remove = create('button', 'fire__secondary', `${PLAN_LABEL[asset]} 적용 해제`);
+      remove.type = 'button';
+      remove.addEventListener('click', () => {
+        delete input.productPlans?.[asset];
+        changed();
+        root.querySelector<HTMLElement>('.verdict')?.focus();
+      });
+      row.append(remove);
+      plans.append(row);
+    }
+    const baseline = calculate(withoutPlans(input));
+    const comparison = create('div', 'stats');
+    comparison.append(
+      statTile('상품 미적용 은퇴자산', formatMan(baseline.assetsAtRetire)),
+      statTile('상품 적용 은퇴자산', formatMan(result.assetsAtRetire)),
+    );
+    const difference = result.assetsAtRetire - baseline.assetsAtRetire;
+    plans.append(comparison, create('p', 'note',
+      `목표 ${Math.round(input.retireAge)}세 기준 ${formatMan(Math.abs(difference))} ${difference >= 0 ? '증가' : '감소'}`));
+  }
+  box.tabIndex = -1;
+  root.replaceChildren(box, ...(selected.length ? [plans] : []), graph, details, shareBox(input, result));
 }
 
 // --- 공유 -------------------------------------------------------------------
@@ -759,8 +806,8 @@ function chart(input: FireInput, result: FireResult): HTMLElement {
       'figcaption',
       'chart__caption',
       result.earliestMonths === null
-        ? '자산(파랑)이 필요액(살구 점선)을 끝내 넘지 못합니다.'
-        : `자산(파랑)이 필요액(살구 점선)을 넘어서는 시점이 ${formatAge(input.age, result.earliestMonths)}입니다.`,
+        ? '자산은 실선, 필요액 참고선은 점선입니다. 현재 조건에서는 은퇴 후 자산이 기대 수명까지 유지되지 않습니다.'
+        : `자산은 실선, 필요액 참고선은 점선입니다. 모의 계산상 은퇴 가능 시점은 ${formatAge(input.age, result.earliestMonths)}입니다.`,
     ),
   );
 

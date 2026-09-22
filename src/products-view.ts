@@ -12,12 +12,7 @@
  * 않는 편이 낫기 때문이다 (wrangler.jsonc 의 근거). 한 번 받은 것은 이 탭이
  * 열려 있는 동안 들고 있어서, 기간이나 금액을 바꿔 볼 때는 다시 받지 않는다.
  *
- * ── 이 칸은 계산기의 값을 바꾸지 않는다 ──────────────────────────────────
- *
- * 세율 하나만 계산기에서 받아 쓴다 (같은 세금을 두 군데에 적게 할 수 없다).
- * 반대 방향으로는 아무것도 흐르지 않는다 — 상품을 골랐다고 계산기의 이율이
- * 바뀌지는 않는다. 공시 금리는 지금 가입할 수 있는 금리이고 계산기의 이율은
- * 앞으로 수십 년의 가정이라, 둘은 같은 숫자가 아니다.
+ * 상품 조건을 검토한 뒤 계산기에 한 번의 가입 시나리오로 적용한다.
  */
 
 import {
@@ -30,6 +25,7 @@ import {
   fetchProducts,
 } from './products';
 import { Offer, Requirement, availableTerms, recommend } from './recommend';
+import { planFromOffer, type ProductPlan, type PlanAsset } from './product-plan';
 
 const STORAGE_KEY = 'fire-products-v1';
 
@@ -119,7 +115,11 @@ function save(choice: Choice): void {
  *
  * @param taxRate 계산기가 쓰는 이자소득세율을 그때그때 물어보는 함수.
  */
-export function mountProducts(root: HTMLElement, taxRate: () => number): void {
+export function mountProducts(
+  root: HTMLElement,
+  taxRate: () => number,
+  applyPlan: (asset: PlanAsset, plan: ProductPlan) => string | null,
+): () => void {
   const choice = load();
 
   // 받아 둔 상품. 종류·금융권마다 한 번만 받는다.
@@ -274,7 +274,9 @@ export function mountProducts(root: HTMLElement, taxRate: () => number): void {
   load_.addEventListener('click', () => void pull());
 
   form.append(kindGroup, amountField, termField, channelField, groupField, load_);
-  section.append(form, list);
+  const review = create('section', 'products__review');
+  review.hidden = true;
+  section.append(form, review, list);
   root.replaceChildren(section);
 
   // --- 받아 오기 -------------------------------------------------------------
@@ -300,9 +302,10 @@ export function mountProducts(root: HTMLElement, taxRate: () => number): void {
     failures = [];
     draw();
 
-    const answer = await fetchProducts({ kind: choice.kind, groups: wanted });
+    const requestedKind = choice.kind;
+    const answer = await fetchProducts({ kind: requestedKind, groups: wanted });
     // 성공한 권역만 담는다. 실패한 쪽은 비워 두어 다시 누르면 다시 받게 한다.
-    for (const [group, products] of answer.byGroup) held.set(`${choice.kind}:${group}`, products);
+    for (const [group, products] of answer.byGroup) held.set(`${requestedKind}:${group}`, products);
     failures = answer.failures.map((failure) => failure.error);
     loading = false;
     fillTerms();
@@ -310,6 +313,7 @@ export function mountProducts(root: HTMLElement, taxRate: () => number): void {
   }
 
   function changed(): void {
+    review.hidden = true;
     save(choice);
     for (const box of kindInputs) box.checked = box.value === choice.kind;
     amountLabel.textContent = choice.kind === 'deposit' ? '한 번에 넣을 돈' : '매달 넣을 돈';
@@ -349,7 +353,7 @@ export function mountProducts(root: HTMLElement, taxRate: () => number): void {
           create(
             'p',
             'products__message',
-            '<상품 불러오기> 를 누르면 그때 공시를 받아 옵니다. 계산기만 쓰러 온 사람에게 상품 목록까지 내려받게 하지 않으려는 것입니다.',
+            '상품을 불러온 뒤 조건을 확인하고 은퇴 계산에 적용할 수 있습니다.',
           ),
         );
       }
@@ -440,6 +444,11 @@ export function mountProducts(root: HTMLElement, taxRate: () => number): void {
         marks.append(create('span', 'products__mark products__mark--plain', offer.product.joinWays.join('·')));
       }
       first.append(marks);
+      const select = create('button', 'products__select', '조건 확인·적용');
+      select.type = 'button';
+      select.setAttribute('aria-label', `${offer.product.company} ${offer.product.name} 조건 확인·적용`);
+      select.addEventListener('click', () => showReview(offer, requirement));
+      first.append(select);
       if (offer.product.special && offer.product.special !== '해당사항 없음') {
         first.append(create('p', 'products__special', `우대: ${offer.product.special}`));
       }
@@ -479,5 +488,61 @@ export function mountProducts(root: HTMLElement, taxRate: () => number): void {
     return wrap;
   }
 
+  function showReview(offer: Offer, requirement: Requirement): void {
+    review.hidden = false;
+    review.replaceChildren();
+    const title = create('h3', 'products__title', `${offer.product.company} · ${offer.product.name}`);
+    title.tabIndex = -1;
+    const description = create('p', 'products__message',
+      `${requirement.termMonths}개월 · ${offer.option.rateType === 'compound' ? '월복리' : '단리'} · ` +
+      `${requirement.kind === 'deposit' ? '예치' : '월 납입'} ${amount(requirement.amount)} · ${month(offer.product.disclosureMonth)} 공시`);
+    const conditions = create('dl', 'products__conditions');
+    for (const [label, value] of [
+      ['가입 대상', offer.product.member || '공시 내용 없음'],
+      ['가입 제한', offer.product.joinDeny === '1' ? '제한 없음' : offer.product.joinDeny === '2' ? '서민 전용' : '일부 제한'],
+      ['공시 최고한도', offer.product.maxLimit ? amount(offer.product.maxLimit / 10_000) : '미공시 — 금융회사에서 확인'],
+      ['가입 방법', offer.product.joinWays.join(' · ') || '공시 내용 없음'],
+      ['적립 방식', requirement.kind === 'deposit' ? '일시 예치' : offer.option.reserveType === 'free' ? '자유적립 (계산은 매월 같은 금액)' : '정액적립'],
+      ['우대조건', offer.product.special || '공시 내용 없음'],
+      ['만기 후 금리', offer.product.afterMaturity || '공시 내용 없음'],
+      ['기타 조건', offer.product.note || '공시 내용 없음'],
+    ]) conditions.append(create('dt', '', label), create('dd', '', value));
+    const confirmed = create('input');
+    confirmed.type = 'checkbox';
+    const confirmation = create('label', 'products__confirm');
+    confirmation.append(confirmed, document.createTextNode('가입 대상과 한도 등 위 조건을 확인했습니다.'));
+    const top = create('input');
+    top.type = 'checkbox';
+    const topLabel = create('label', 'products__confirm');
+    topLabel.append(top, document.createTextNode(`우대조건을 모두 충족하는 것으로 계산 (${offer.option.topRate.toFixed(2)}%)`));
+    topLabel.hidden = offer.option.topRate <= offer.option.rate;
+    const assumptions = create('p', 'products__message',
+      `우대를 선택하지 않으면 기본금리 ${offer.option.rate.toFixed(2)}%를 적용합니다. 예금은 현재 예금 자산에서, 적금은 매달 적금에 배분한 저축액에서 충당합니다. ` +
+      '선택한 기간에 한 번 가입하고 만기 이후에는 기존 자산군의 수익률로 운용합니다. 중도해지 없이 만기 이후 은퇴하는 시나리오입니다.');
+    const status = create('p', 'products__message');
+    status.setAttribute('role', 'status');
+    const apply = create('button', 'products__load', '은퇴 계산에 적용');
+    apply.type = 'button';
+    apply.addEventListener('click', () => {
+      if (!confirmed.checked) {
+        status.textContent = '가입 대상과 한도 등 상품 조건을 먼저 확인해주세요.';
+        confirmed.focus();
+        return;
+      }
+      const error = applyPlan(requirement.kind === 'deposit' ? 'deposit' : 'installment',
+        planFromOffer(offer, requirement.amount, top.checked));
+      status.textContent = error ?? '상품 조건을 반영했습니다. 위의 적용 전후 결과를 확인하세요.';
+      status.classList.toggle('products__message--bad', error !== null);
+    });
+    const close = create('button', 'fire__secondary', '닫기');
+    close.type = 'button';
+    close.addEventListener('click', () => { review.hidden = true; });
+    const actions = create('div', 'share__row');
+    actions.append(apply, close);
+    review.append(title, description, conditions, confirmation, topLabel, assumptions, actions, status);
+    title.focus();
+  }
+
   changed();
+  return draw;
 }
