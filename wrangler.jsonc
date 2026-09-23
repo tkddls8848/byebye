@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "fire-calc",
+  "name": "byebye",
   "main": "worker/index.ts",
   "tsconfig": "tsconfig.worker.json",
   "compatibility_date": "2026-09-14",

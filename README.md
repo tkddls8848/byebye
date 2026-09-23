@@ -1,14 +1,16 @@
-# FIRE 계산기
+# byebye
 
 자산·저축·지출을 바탕으로 은퇴 가능 시점을 계산하고 금융감독원 예적금 공시를 비교하는 독립 웹 앱입니다.
 `tkddls8848/quotation`의 FIRE 기능에서 분리했습니다. 다른 저장소나 견적서·문서 변환 엔진 없이 빌드됩니다.
+
+화면은 자료 검색 쪽의 생김새를 빌려 씁니다. 까닭과 경계는 [화면 껍데기](#화면-껍데기)에 적어 두었습니다.
 
 ## 구성
 
 - `src/`: FIRE 계산, 입력 탭, 항상 표시되는 자산 추이 그래프, 예적금 비교 화면, 결과 공유 링크
 - `worker/`: `/api/fire/products` 금융감독원 API 중계, 링크 미리보기 꼬리표 주입, `robots.txt`·`sitemap.xml`
 - `public/`: 정적 응답 보안 헤더, 안내 문서, 아이콘과 미리보기 그림
-- `index.html`: 자바스크립트 없이도 읽히는 소개 글과 구조화 데이터(JSON-LD)
+- `index.html`: 자바스크립트 없이도 읽히는 소개 글과 구조화 데이터(JSON-LD), 화면이 붙기 전에 보이는 껍데기
 - `wrangler.jsonc`: Cloudflare Worker 및 정적 자산 설정
 
 ## 개발 및 검증
@@ -31,10 +33,13 @@ API까지 포함해 확인하려면 `npm run worker:dev`를 사용합니다. Vit
 npm run deploy
 ```
 
-GitHub 저장소는 `fire_calc`, Worker는 Cloudflare 이름 규칙에 맞춘 `fire-calc`입니다.
+GitHub 저장소와 Worker 모두 `byebye`이며, 배포 주소는 `https://byebye.tkddls8848.workers.dev/`입니다.
+Worker 이름이 곧 주소의 앞 칸이라 바꾸면 주소가 따라 바뀝니다. 바꾼 이름으로 배포하면 **새 Worker가 생기고**
+옛 이름의 Worker와 그 주소는 지울 때까지 그대로 살아 있습니다.
 시크릿과 사용자 환경 변수는 저장소에 넣지 않습니다. `keep_vars: true`로 대시보드에서 직접 설정한 변수를 재배포 때 유지합니다.
 
-Cloudflare **Workers & Pages → fire-calc → Settings → Variables and Secrets**에서 다음 항목을 직접 설정하세요.
+Cloudflare **Workers & Pages → byebye → Settings → Variables and Secrets**에서 다음 항목을 직접 설정하세요.
+Worker 이름을 바꾸면 여기에 넣어 둔 값은 따라오지 않습니다 — 새 이름으로 처음 배포한 뒤 다시 넣어야 합니다.
 
 | 종류 | 이름 | 용도 |
 | --- | --- | --- |
@@ -48,6 +53,22 @@ GitHub 자동 검증은 `.github/workflows/ci.yml`에서 실행합니다.
 Cloudflare에서 GitHub 자동 배포를 연결할 경우 저장소 루트 `/`, 빌드 명령 `npm run build`, 배포 명령 `npx wrangler deploy`를 사용합니다.
 
 참고: [Worker 이름·변수 설정](https://developers.cloudflare.com/workers/wrangler/configuration/), [API 우선 라우팅](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/).
+
+## 화면 껍데기
+
+이 도구를 여는 사람은 대개 사무실에 앉아 있습니다. 그래서 화면 바깥을 자료를 찾는 쪽의 생김새로 감쌉니다 —
+검색창, 탭 줄, 문서 카드, 오른쪽 연관 검색어. 짓는 자리는 `src/view.ts`의 `화면 껍데기` 단락과 `src/styles.css`입니다.
+
+- **빌린 것은 배치뿐입니다.** 어느 포털의 이름도 로고도 고유색도 쓰지 않습니다. 남의 상표를 단 쪽을 공개 주소에
+  올리면 그것은 위장이 아니라 사칭이고, 피싱으로 오인되어 차단될 수 있습니다. 색은 `--accent: #1b7f4f`로 따로 잡았습니다.
+- **탭 제목이 먼저입니다.** 자리를 비웠을 때 옆자리에 남는 것은 그것뿐입니다. 검색창에 적은 말이 곧 탭 제목이 되고,
+  그 말은 `localStorage`의 `doc-query-v1`에 이 브라우저에만 남습니다. 오른쪽 연관 검색어를 누르면 그 말로 바뀝니다.
+- **크게 찍히는 글자는 중립적인 말로 씁니다.** 판정 딱지는 `조건 충족`·`목표 시점 미달`·`조건 미충족`이고,
+  입력 묶음의 이름도 `기본 조건`·`월 적립액`·`보유 자산`처럼 표의 말로 둡니다. 가리키는 뜻은 그대로입니다.
+- **탭 줄은 누를 수 없습니다.** 생김새만 빌린 것이라 `aria-hidden`으로 두어, 누를 수 없는 것을 누를 수 있다고
+  보조기기에 알리지 않습니다.
+- **바꾸는 것은 화면에 뜨는 것뿐입니다.** `description`·`og:`·JSON-LD처럼 눈에 보이지 않고 검색엔진과 링크
+  미리보기가 읽는 자리는 그대로 둡니다. 다만 `<title>`은 화면에 뜨므로 바꾸었고, 그만큼 검색 노출에서 손해를 봅니다.
 
 ## 공유와 검색 노출
 

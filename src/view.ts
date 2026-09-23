@@ -81,7 +81,7 @@ const ASSET_ROWS = [
 
 const SECTIONS: Section[] = [
   {
-    title: '나의 은퇴 계획',
+    title: '기본 조건',
     fields: [
       num('age', '지금 나이', '세', 1, (i) => i.age, (i, v) => (i.age = v)),
       num('retireAge', '은퇴하고 싶은 나이', '세', 1, (i) => i.retireAge, (i, v) => (i.retireAge = v)),
@@ -91,7 +91,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: '매달 저축',
+    title: '월 적립액',
     note: '지금 실제로 남겨서 넣는 돈입니다. 은퇴 전까지 넣습니다.',
     fields: [
       num('monthlySaving', '월 저축액', '만원', 10, (i) => i.monthlySaving, (i, v) => (i.monthlySaving = v)),
@@ -103,7 +103,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: '은퇴 후 한 달 지출',
+    title: '월 지출 항목',
     note: '지금 물가, 1인 기준으로 적으십시오. 결혼·자녀·차는 아래에서 더합니다.',
     fields: [
       num('living', '생활비 (먹고 입고 쓰는 돈)', '만원', 10, (i) => i.living, (i, v) => (i.living = v)),
@@ -117,7 +117,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: '가족과 차',
+    title: '가구 구성',
     fields: [
       bool('married', '결혼했다 (또는 할 것이다)', (i) => i.married, (i, v) => (i.married = v)),
       num('children', '자녀 수', '명', 1, (i) => i.children, (i, v) => (i.children = v)),
@@ -150,7 +150,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: '가정과 세금',
+    title: '적용 가정과 세율',
     fields: [
       num('inflation', '물가 상승률', '%', 0.1, (i) => i.inflation, (i, v) => (i.inflation = v)),
       num('swr', '안전 인출률', '%', 0.1, (i) => i.swr, (i, v) => (i.swr = v), {
@@ -197,6 +197,76 @@ function numberInput(id: string, value: number, step: number, min: number): HTML
   input.value = String(Number(value.toFixed(4)));
   input.inputMode = 'decimal';
   return input;
+}
+
+// --- 화면 껍데기 -------------------------------------------------------------
+
+/*
+ * 이 도구를 여는 사람은 대개 사무실에 앉아 있다. 그래서 화면 바깥을 자료를
+ * 찾는 쪽의 생김새로 감싼다 — 검색창, 탭 줄, 문서 카드, 연관 검색어. 빌린
+ * 것은 **배치뿐**이고 어느 포털의 이름도 로고도 고유색도 쓰지 않는다. 남의
+ * 상표를 단 쪽을 공개 주소에 올리면 그건 위장이 아니라 사칭이다.
+ */
+
+const QUERY_KEY = 'doc-query-v1';
+const DEFAULT_QUERY = '노후 소득 보장 제도';
+const SITE_LABEL = '통합 자료 검색';
+const SEARCH_TABS = ['통합', '문서', '통계', '뉴스', '학술', '이미지', '사전'];
+const RELATED_TERMS = [
+  '소득대체율',
+  '국민연금 개시연령',
+  '물가상승률 전망',
+  '가계금융복지조사',
+  '예금 금리 추이',
+  '노후 필요자금',
+];
+const DOC_LINKS = [
+  { href: '/guide/fire-calculator', text: '산출 기준 해설' },
+  { href: '/guide/4-percent-rule', text: '안전인출률(4% 룰) 개요' },
+  { href: '/guide/deposit-rate', text: '예금·적금 금리 비교 방법' },
+];
+
+/** 검색창에 적힌 말. 제 일과 어울리는 말로 바꿔 두면 탭 제목까지 따라간다. */
+function readQuery(): string {
+  try {
+    return localStorage.getItem(QUERY_KEY) || DEFAULT_QUERY;
+  } catch {
+    return DEFAULT_QUERY;
+  }
+}
+
+function writeQuery(text: string): void {
+  try {
+    localStorage.setItem(QUERY_KEY, text);
+  } catch {
+    // 저장이 막혀 있어도 화면은 그대로 돈다.
+  }
+}
+
+/** 돋보기. 선만 그려 두고 색은 글자색을 따라가게 둔다. */
+function searchGlyph(className: string): SVGSVGElement {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('class', className);
+  svg.setAttribute('aria-hidden', 'true');
+  const lens = document.createElementNS(NS, 'circle');
+  lens.setAttribute('cx', '10.5');
+  lens.setAttribute('cy', '10.5');
+  lens.setAttribute('r', '6.5');
+  const handle = document.createElementNS(NS, 'path');
+  handle.setAttribute('d', 'M15.3 15.3 L21 21');
+  svg.append(lens, handle);
+  return svg;
+}
+
+/** 검색 결과 한 건처럼 감싼다. */
+function docCard(title: string, source: string, body: HTMLElement, extra = ''): HTMLElement {
+  const card = create('section', extra ? `doc ${extra}` : 'doc');
+  const heading = create('h2', 'doc__title');
+  heading.append(create('span', 'doc__mark'), document.createTextNode(title));
+  card.append(heading, create('p', 'doc__source', source), body);
+  return card;
 }
 
 export function mountFire(root: HTMLElement): void {
@@ -313,7 +383,7 @@ export function mountFire(root: HTMLElement): void {
 
   // 자산은 표로 세운다 — 네 자산군을 같은 잣대로 견주어 보는 게 요점이다.
   const assetCard = create('fieldset', 'card');
-  assetCard.append(create('legend', 'card__title', '모은 돈'));
+  assetCard.append(create('legend', 'card__title', '보유 자산'));
   assetCard.append(
     create('p', 'card__note', '금액과 이율을 입력하세요. 월 저축 배분의 합은 100%입니다.'),
   );
@@ -391,20 +461,64 @@ export function mountFire(root: HTMLElement): void {
   result.setAttribute('aria-live', 'polite');
 
   const body = create('div', 'fire__body');
-  body.append(form, result);
+  body.append(
+    docCard('조회 조건', '입력 즉시 반영 · 입력값은 이 브라우저에만 남습니다', form, 'doc--form'),
+    docCard('문서 요약', '입력값 기준 자동 산출 · 참고용', result, 'doc--result'),
+  );
 
-  // 머리말과 꼬리말까지 이 도구가 갖는다. 셸은 빈 칸만 내준다.
-  const head = create('header', 'page__head');
-  // 탭 이름과 창 제목은 "계산기" 다 — 옆에서 잠깐 보는 사람에게 굳이 띄울
-  // 이름이 아니다. 열고 들어온 사람에게는 제 이름을 밝힌다.
-  head.append(create('p', 'page__eyebrow', 'PLAN YOUR FREEDOM'));
-  head.append(create('h1', '', 'FIRE 계산기'));
-  const lede = create('p', 'lede');
-  lede.textContent = '자산과 저축, 은퇴 후 지출로 나의 은퇴 가능 시점을 확인하세요.';
-  head.append(lede);
+  // 검색창 줄. 화면 맨 위에 붙어 따라 내려온다.
+  const chrome = create('div', 'serp__chrome');
+  const bar = create('div', 'serp__bar');
+  const brand = create('a', 'serp__brand');
+  brand.href = '/';
+  brand.append(searchGlyph('serp__mark'), create('span', '', SITE_LABEL));
+  const search = create('form', 'serp__search');
+  search.setAttribute('role', 'search');
+  const query = create('input', 'serp__query');
+  query.type = 'search';
+  query.value = readQuery();
+  query.autocomplete = 'off';
+  query.setAttribute('aria-label', '검색어');
+  const submit = create('button', 'serp__submit');
+  submit.type = 'submit';
+  submit.setAttribute('aria-label', '검색');
+  submit.append(searchGlyph('serp__glyph'));
+  search.append(query, submit);
+  search.addEventListener('submit', (event) => {
+    event.preventDefault();
+    query.blur();
+  });
+  bar.append(brand, search);
+
+  // 탭 줄은 생김새만 빌린 것이라 누를 수 없다. 누를 수 없는 것을 누를 수 있다고
+  // 알리지 않도록 보조기기에는 내보내지 않는다.
+  const tabs = create('div', 'serp__tabs');
+  tabs.setAttribute('aria-hidden', 'true');
+  for (const [index, name] of SEARCH_TABS.entries()) {
+    tabs.append(create('span', index === 0 ? 'serp__tab serp__tab--on' : 'serp__tab', name));
+  }
+  chrome.append(bar, tabs);
+
+  const lead = create('header', 'serp__lead');
+  const count = create('p', 'serp__count');
+  const heading = create('h1', 'serp__heading');
+  const showQuery = (): void => {
+    const text = query.value.trim() || DEFAULT_QUERY;
+    // 자리를 비웠을 때 옆자리에 남는 것은 탭 제목이다. 그것부터 맞춘다.
+    document.title = text + ' : ' + SITE_LABEL;
+    count.textContent =
+      '문서 ' + (text.length * 137 + 2048).toLocaleString('ko-KR') + '건 · 정확도순 · 기간 전체';
+    heading.replaceChildren(create('b', '', "'" + text + "'"), document.createTextNode(' 검색 결과'));
+  };
+  query.addEventListener('input', () => {
+    writeQuery(query.value);
+    showQuery();
+  });
+  showQuery();
+  lead.append(count, heading);
   if (shared) {
-    head.append(
-      create('p', 'note note--muted', '공유된 결과를 보고 있습니다. 값을 고치면 그때부터 내 결과가 됩니다.'),
+    lead.append(
+      create('p', 'note note--muted', '공유된 조건을 보고 있습니다. 값을 고치면 그때부터 내 조건이 됩니다.'),
     );
   }
 
@@ -434,7 +548,52 @@ export function mountFire(root: HTMLElement): void {
 
   const guide = create('details', 'fire__guide');
   guide.append(create('summary', 'more__summary', '계산 기준과 데이터 안내'), foot);
-  root.replaceChildren(head, body, productsMore, guide);
+
+  // 오른쪽 칸. 넓은 화면에서만 선다.
+  const side = create('aside', 'serp__side');
+  side.setAttribute('aria-label', '보조 정보');
+  const terms = create('div', 'rail');
+  terms.append(create('h2', 'rail__title', '연관 검색어'));
+  const termList = create('div', 'rail__terms');
+  for (const term of RELATED_TERMS) {
+    // 눌러 두면 검색창과 탭 제목이 그 말로 바뀐다 — 덮어쓸 말을 고르는 자리다.
+    const chip = create('button', 'rail__term', term);
+    chip.type = 'button';
+    chip.addEventListener('click', () => {
+      query.value = term;
+      writeQuery(term);
+      showQuery();
+    });
+    termList.append(chip);
+  }
+  terms.append(termList);
+  const links = create('div', 'rail');
+  links.append(create('h2', 'rail__title', '참고 자료'));
+  const linkList = create('ul', 'rail__links');
+  for (const item of DOC_LINKS) {
+    const row = create('li');
+    const link = create('a', '', item.text);
+    link.href = item.href;
+    row.append(link);
+    linkList.append(row);
+  }
+  links.append(linkList);
+  links.append(
+    create('p', 'rail__note', '검색창에 적은 말은 이 브라우저에만 남고, 탭 제목도 그 말로 바뀝니다.'),
+  );
+  side.append(terms, links);
+
+  const main = create('div', 'serp__main');
+  main.append(
+    lead,
+    body,
+    docCard('관련 문서', 'finlife.fss.or.kr · 금융감독원 금융상품 통합 비교공시', productsMore),
+    docCard('이용 안내', '산출 기준 · 자료 출처 · 고지', guide),
+  );
+  const grid = create('div', 'serp__grid');
+  grid.append(main, side);
+
+  root.replaceChildren(chrome, grid);
   refreshProducts = mountProducts(products, () => input.taxRate, (asset, plan) => {
     const error = planError(input, asset, plan);
     if (error) return error;
@@ -449,10 +608,12 @@ export function mountFire(root: HTMLElement): void {
 
 // --- 결과 -------------------------------------------------------------------
 
+// 화면에서 가장 크게 찍히는 글자다. 옆에서 얼핏 보아도 표의 판정으로 읽히도록
+// 중립적인 말을 쓴다 — 가리키는 뜻은 그대로다.
 const VERDICT: Record<FireResult['verdict'], { badge: string; tone: string }> = {
-  possible: { badge: 'FIRE 가능', tone: 'ok' },
-  late: { badge: '목표보다 늦습니다', tone: 'warn' },
-  impossible: { badge: '지금 조건으로는 어렵습니다', tone: 'bad' },
+  possible: { badge: '조건 충족', tone: 'ok' },
+  late: { badge: '목표 시점 미달', tone: 'warn' },
+  impossible: { badge: '조건 미충족', tone: 'bad' },
 };
 
 function headline(input: FireInput, result: FireResult): string {
