@@ -26,13 +26,18 @@
   accent-color: var(--accent);
 }
 
+.boot-screen { padding: 40px; background: #fff; color: #727983; }
+.boot-screen strong { color: #00a850; display: block; margin-bottom: 24px; }
+.boot-screen span { font-size: 22px; color: #333b45; }
+.boot-details { margin: 20px 40px; color: #737b85; font-size: 13px; }
+
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕",
+  font: 15px/1.6 "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕",
     "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
   letter-spacing: -0.02em;
 }

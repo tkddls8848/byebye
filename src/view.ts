@@ -10,6 +10,7 @@
  * 필요 없다. 입력은 브라우저에 남겨 두어 새로 고쳐도 지워지지 않는다.
  */
 import './fire.css';
+import { mountWorkspace } from './workspace';
 
 import { formatAge, formatMan, formatShort } from './format';
 import { FireInput, FireResult, calculate, defaultInput } from './model';
@@ -83,18 +84,18 @@ const SECTIONS: Section[] = [
   {
     title: '기본 조건',
     fields: [
-      num('age', '지금 나이', '세', 1, (i) => i.age, (i, v) => (i.age = v)),
-      num('retireAge', '은퇴하고 싶은 나이', '세', 1, (i) => i.retireAge, (i, v) => (i.retireAge = v)),
-      num('lifeAge', '돈이 버텨야 하는 나이', '세', 1, (i) => i.lifeAge, (i, v) => (i.lifeAge = v), {
+      num('age', '현재 나이', '세', 1, (i) => i.age, (i, v) => (i.age = v)),
+      num('retireAge', '목표 나이', '세', 1, (i) => i.retireAge, (i, v) => (i.retireAge = v)),
+      num('lifeAge', '산정 종료 나이', '세', 1, (i) => i.lifeAge, (i, v) => (i.lifeAge = v), {
         help: '기대 수명. 길게 잡을수록 보수적인 답이 나옵니다.',
       }),
     ],
   },
   {
     title: '월 적립액',
-    note: '지금 실제로 남겨서 넣는 돈입니다. 은퇴 전까지 넣습니다.',
+    note: '목표 시점까지 유지할 월 적립액입니다.',
     fields: [
-      num('monthlySaving', '월 저축액', '만원', 10, (i) => i.monthlySaving, (i, v) => (i.monthlySaving = v)),
+      num('monthlySaving', '월 적립액', '만원', 10, (i) => i.monthlySaving, (i, v) => (i.monthlySaving = v)),
     ],
     advanced: [
       num('savingGrowth', '저축액 연 증가율', '%', 0.5, (i) => i.savingGrowth, (i, v) => (i.savingGrowth = v), {
@@ -201,66 +202,8 @@ function numberInput(id: string, value: number, step: number, min: number): HTML
 
 // --- 화면 껍데기 -------------------------------------------------------------
 
-/*
- * 이 도구를 여는 사람은 대개 사무실에 앉아 있다. 그래서 화면 바깥을 자료를
- * 찾는 쪽의 생김새로 감싼다 — 검색창, 탭 줄, 문서 카드, 연관 검색어. 빌린
- * 것은 **배치뿐**이고 어느 포털의 이름도 로고도 고유색도 쓰지 않는다. 남의
- * 상표를 단 쪽을 공개 주소에 올리면 그건 위장이 아니라 사칭이다.
- */
+/** 업무용 문서의 각 영역을 감싸는 카드. 전체 탐색과 화면 전환은 workspace.ts가 담당한다. */
 
-const QUERY_KEY = 'doc-query-v1';
-const DEFAULT_QUERY = '노후 소득 보장 제도';
-const SITE_LABEL = '통합 자료 검색';
-const SEARCH_TABS = ['통합', '문서', '통계', '뉴스', '학술', '이미지', '사전'];
-const RELATED_TERMS = [
-  '소득대체율',
-  '국민연금 개시연령',
-  '물가상승률 전망',
-  '가계금융복지조사',
-  '예금 금리 추이',
-  '노후 필요자금',
-];
-const DOC_LINKS = [
-  { href: '/guide/fire-calculator', text: '산출 기준 해설' },
-  { href: '/guide/4-percent-rule', text: '안전인출률(4% 룰) 개요' },
-  { href: '/guide/deposit-rate', text: '예금·적금 금리 비교 방법' },
-];
-
-/** 검색창에 적힌 말. 제 일과 어울리는 말로 바꿔 두면 탭 제목까지 따라간다. */
-function readQuery(): string {
-  try {
-    return localStorage.getItem(QUERY_KEY) || DEFAULT_QUERY;
-  } catch {
-    return DEFAULT_QUERY;
-  }
-}
-
-function writeQuery(text: string): void {
-  try {
-    localStorage.setItem(QUERY_KEY, text);
-  } catch {
-    // 저장이 막혀 있어도 화면은 그대로 돈다.
-  }
-}
-
-/** 돋보기. 선만 그려 두고 색은 글자색을 따라가게 둔다. */
-function searchGlyph(className: string): SVGSVGElement {
-  const NS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('class', className);
-  svg.setAttribute('aria-hidden', 'true');
-  const lens = document.createElementNS(NS, 'circle');
-  lens.setAttribute('cx', '10.5');
-  lens.setAttribute('cy', '10.5');
-  lens.setAttribute('r', '6.5');
-  const handle = document.createElementNS(NS, 'path');
-  handle.setAttribute('d', 'M15.3 15.3 L21 21');
-  svg.append(lens, handle);
-  return svg;
-}
-
-/** 검색 결과 한 건처럼 감싼다. */
 function docCard(title: string, source: string, body: HTMLElement, extra = ''): HTMLElement {
   const card = create('section', extra ? `doc ${extra}` : 'doc');
   const heading = create('h2', 'doc__title');
@@ -462,68 +405,11 @@ export function mountFire(root: HTMLElement): void {
 
   const body = create('div', 'fire__body');
   body.append(
-    docCard('조회 조건', '입력 즉시 반영 · 입력값은 이 브라우저에만 남습니다', form, 'doc--form'),
-    docCard('문서 요약', '입력값 기준 자동 산출 · 참고용', result, 'doc--result'),
+    docCard('기준 정보', '분석에 필요한 기준값을 입력하세요.', form, 'doc--form'),
+    docCard('분석 요약', '현재 입력 조건에 따른 장기 추정 결과입니다.', result, 'doc--result'),
   );
 
-  // 검색창 줄. 화면 맨 위에 붙어 따라 내려온다.
-  const chrome = create('div', 'serp__chrome');
-  const bar = create('div', 'serp__bar');
-  const brand = create('a', 'serp__brand');
-  brand.href = '/';
-  brand.append(searchGlyph('serp__mark'), create('span', '', SITE_LABEL));
-  const search = create('form', 'serp__search');
-  search.setAttribute('role', 'search');
-  const query = create('input', 'serp__query');
-  query.type = 'search';
-  query.value = readQuery();
-  query.autocomplete = 'off';
-  query.setAttribute('aria-label', '검색어');
-  const submit = create('button', 'serp__submit');
-  submit.type = 'submit';
-  submit.setAttribute('aria-label', '검색');
-  submit.append(searchGlyph('serp__glyph'));
-  search.append(query, submit);
-  search.addEventListener('submit', (event) => {
-    event.preventDefault();
-    query.blur();
-  });
-  bar.append(brand, search);
-
-  // 탭 줄은 생김새만 빌린 것이라 누를 수 없다. 누를 수 없는 것을 누를 수 있다고
-  // 알리지 않도록 보조기기에는 내보내지 않는다.
-  const tabs = create('div', 'serp__tabs');
-  tabs.setAttribute('aria-hidden', 'true');
-  for (const [index, name] of SEARCH_TABS.entries()) {
-    tabs.append(create('span', index === 0 ? 'serp__tab serp__tab--on' : 'serp__tab', name));
-  }
-  chrome.append(bar, tabs);
-
-  const lead = create('header', 'serp__lead');
-  const count = create('p', 'serp__count');
-  const heading = create('h1', 'serp__heading');
-  const showQuery = (): void => {
-    const text = query.value.trim() || DEFAULT_QUERY;
-    // 자리를 비웠을 때 옆자리에 남는 것은 탭 제목이다. 그것부터 맞춘다.
-    document.title = text + ' : ' + SITE_LABEL;
-    count.textContent =
-      '문서 ' + (text.length * 137 + 2048).toLocaleString('ko-KR') + '건 · 정확도순 · 기간 전체';
-    heading.replaceChildren(create('b', '', "'" + text + "'"), document.createTextNode(' 검색 결과'));
-  };
-  query.addEventListener('input', () => {
-    writeQuery(query.value);
-    showQuery();
-  });
-  showQuery();
-  lead.append(count, heading);
-  if (shared) {
-    lead.append(
-      create('p', 'note note--muted', '공유된 조건을 보고 있습니다. 값을 고치면 그때부터 내 조건이 됩니다.'),
-    );
-  }
-
-  // 상품 비교는 계산 조건과 결과를 확인한 뒤 펼칠 수 있다.
-  // 상품별 조건은 기존 자산과 저축 안에서 충당하는 시나리오로 적용한다.
+  // 상품 비교는 별도의 문서 탭에 배치한다.
   const products = create('section', 'fire__products');
   const productsMore = create('details', 'fire__products-more');
   productsMore.append(create('summary', 'fire__disclosure', '예적금 상품 비교하기'), products);
@@ -549,51 +435,13 @@ export function mountFire(root: HTMLElement): void {
   const guide = create('details', 'fire__guide');
   guide.append(create('summary', 'more__summary', '계산 기준과 데이터 안내'), foot);
 
-  // 오른쪽 칸. 넓은 화면에서만 선다.
-  const side = create('aside', 'serp__side');
-  side.setAttribute('aria-label', '보조 정보');
-  const terms = create('div', 'rail');
-  terms.append(create('h2', 'rail__title', '연관 검색어'));
-  const termList = create('div', 'rail__terms');
-  for (const term of RELATED_TERMS) {
-    // 눌러 두면 검색창과 탭 제목이 그 말로 바뀐다 — 덮어쓸 말을 고르는 자리다.
-    const chip = create('button', 'rail__term', term);
-    chip.type = 'button';
-    chip.addEventListener('click', () => {
-      query.value = term;
-      writeQuery(term);
-      showQuery();
-    });
-    termList.append(chip);
-  }
-  terms.append(termList);
-  const links = create('div', 'rail');
-  links.append(create('h2', 'rail__title', '참고 자료'));
-  const linkList = create('ul', 'rail__links');
-  for (const item of DOC_LINKS) {
-    const row = create('li');
-    const link = create('a', '', item.text);
-    link.href = item.href;
-    row.append(link);
-    linkList.append(row);
-  }
-  links.append(linkList);
-  links.append(
-    create('p', 'rail__note', '검색창에 적은 말은 이 브라우저에만 남고, 탭 제목도 그 말로 바뀝니다.'),
-  );
-  side.append(terms, links);
-
-  const main = create('div', 'serp__main');
-  main.append(
-    lead,
-    body,
-    docCard('관련 문서', 'finlife.fss.or.kr · 금융감독원 금융상품 통합 비교공시', productsMore),
-    docCard('이용 안내', '산출 기준 · 자료 출처 · 고지', guide),
-  );
-  const grid = create('div', 'serp__grid');
-  grid.append(main, side);
-
-  root.replaceChildren(chrome, grid);
+  // 업무 문서 화면과 수치를 숨기는 문서 목록을 함께 구성한다.
+  mountWorkspace(root, {
+    calculation: body,
+    products: docCard('비교 자료', '금융감독원 금융상품 통합 비교공시', productsMore),
+    guide: docCard('산출 기준', '자료 출처 · 계산 가정', guide),
+    shared,
+  });
   refreshProducts = mountProducts(products, () => input.taxRate, (asset, plan) => {
     const error = planError(input, asset, plan);
     if (error) return error;
@@ -618,15 +466,15 @@ const VERDICT: Record<FireResult['verdict'], { badge: string; tone: string }> = 
 
 function headline(input: FireInput, result: FireResult): string {
   if (result.earliestMonths === null) {
-    return '어느 나이에 은퇴해도 기대 수명까지 돈이 버티지 못합니다. 지출을 줄이거나 저축을 늘려야 합니다.';
+    return '산정 기간 내 유지 조건을 충족하지 못합니다. 지출 또는 월 적립액을 조정하세요.';
   }
   const when = formatAge(input.age, result.earliestMonths);
   if (result.verdict === 'possible') {
     return result.earliestMonths === 0
-      ? '지금 가진 것만으로 은퇴해도 기대 수명까지 버팁니다.'
-      : `${when}부터 은퇴할 수 있습니다. 목표는 ${Math.round(input.retireAge)}세입니다.`;
+      ? '현재 자산으로 산정 종료 시점까지 유지할 수 있습니다.'
+      : `조건 충족 시점은 ${when}입니다. 설정한 목표는 ${Math.round(input.retireAge)}세입니다.`;
   }
-  return `가장 이른 은퇴 시점은 ${when}입니다. 목표한 ${Math.round(input.retireAge)}세보다 늦습니다.`;
+  return `조건 충족 시점은 ${when}으로, 목표 ${Math.round(input.retireAge)}세 이후입니다.`;
 }
 
 function statTile(label: string, value: string, note?: string): HTMLElement {
@@ -645,6 +493,7 @@ function drawResult(root: HTMLElement, input: FireInput, result: FireResult, cha
   const verdict = VERDICT[result.verdict];
   const box = create('div', 'verdict');
   box.dataset.tone = verdict.tone;
+  box.append(create('p', 'ws-result-caption', '검토 결과 / 현재 시나리오'));
   box.append(create('strong', 'verdict__badge', verdict.badge));
   box.append(create('p', 'verdict__line', headline(input, result)));
 
@@ -664,7 +513,7 @@ function drawResult(root: HTMLElement, input: FireInput, result: FireResult, cha
     ),
   );
   stats.append(
-    statTile('은퇴 후 한 달 지출', formatMan(result.monthlySpendToday), '지금 물가 기준'),
+    statTile('목표 이후 월 지출', formatMan(result.monthlySpendToday), '지금 물가 기준'),
   );
   stats.append(
     statTile(
@@ -679,7 +528,10 @@ function drawResult(root: HTMLElement, input: FireInput, result: FireResult, cha
   );
 
   const graph = chart(input, result);
-  const parts: HTMLElement[] = [stats];
+  const chartHeading = create('h3', 'ws-chart-heading', '자산 추이');
+  chartHeading.append(create('span', '', '실선 : 예상 자산 / 점선 : 기준 금액'));
+  graph.prepend(chartHeading);
+  const parts: HTMLElement[] = [];
 
   if (result.depletionAge !== null) {
     const note = create(
@@ -762,7 +614,10 @@ function drawResult(root: HTMLElement, input: FireInput, result: FireResult, cha
       `목표 ${Math.round(input.retireAge)}세 기준 ${formatMan(Math.abs(difference))} ${difference >= 0 ? '증가' : '감소'}`));
   }
   box.tabIndex = -1;
-  root.replaceChildren(box, ...(selected.length ? [plans] : []), graph, details, shareBox(input, result));
+  const sharing = create('details', 'ws-sharing');
+  sharing.open = root.querySelector<HTMLDetailsElement>('.ws-sharing')?.open ?? false;
+  sharing.append(create('summary', 'fire__disclosure', '문서 링크 공유'), shareBox(input, result));
+  root.replaceChildren(box, stats, ...(selected.length ? [plans] : []), graph, details, sharing);
 }
 
 // --- 공유 -------------------------------------------------------------------
@@ -967,8 +822,8 @@ function chart(input: FireInput, result: FireResult): HTMLElement {
       'figcaption',
       'chart__caption',
       result.earliestMonths === null
-        ? '자산은 실선, 필요액 참고선은 점선입니다. 현재 조건에서는 은퇴 후 자산이 기대 수명까지 유지되지 않습니다.'
-        : `자산은 실선, 필요액 참고선은 점선입니다. 모의 계산상 은퇴 가능 시점은 ${formatAge(input.age, result.earliestMonths)}입니다.`,
+        ? '자산은 실선, 필요액 참고선은 점선입니다. 현재 조건에서는 산정 종료 시점까지 자산이 유지되지 않습니다.'
+        : `자산은 실선, 필요액 참고선은 점선입니다. 모의 계산상 조건 충족 시점은 ${formatAge(input.age, result.earliestMonths)}입니다.`,
     ),
   );
 

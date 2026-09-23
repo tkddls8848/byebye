@@ -1,7 +1,7 @@
 {
-  "name": "통합 자료 검색",
-  "short_name": "자료 검색",
-  "description": "노후 소득 보장 제도 관련 자료와 산출 조건을 한 화면에서 조회합니다.",
+  "name": "WORKSHEET · 개인 작업 공간",
+  "short_name": "WORKSHEET",
+  "description": "개인 계획 자료와 산출 조건을 문서 형태로 관리합니다.",
   "lang": "ko-KR",
   "dir": "ltr",
   "start_url": "/",
