@@ -1,0 +1,34 @@
+<!doctype html>
+<!--
+  브라우저 옆 칸(side panel / 웨일 사이드바)에 뜨는 화면.
+
+  위의 얇은 도구 막대만 이 확장의 것이고, 그 아래는 웹 앱과 같은 WORKSHEET 화면이다.
+  사용자가 보고 있는 페이지는 이 칸 바깥에 그대로 있고, 이 칸은 그 페이지를 읽지도
+  고치지도 않는다.
+-->
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>중장기 운영 계획 · WORKSHEET</title>
+    <script type="module" src="./src/sidepanel.ts"></script>
+  </head>
+  <body class="sheet-host">
+    <div class="sheet-bar" role="toolbar" aria-label="사이드 시트 도구">
+      <span class="sheet-bar__label">
+        <svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h10l4 4v14H5z M14 3v5h5 M8 12h8 M8 16h8 M11 10v9" /></svg>
+        사이드 시트
+      </span>
+      <span class="sheet-bar__hint" id="boss-hint" hidden></span>
+      <button type="button" class="sheet-bar__button" id="mini-button" title="늘 위에 뜨는 작은 창으로 열기">
+        <svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3z M12 12h7v5h-7z" /></svg>
+        <span id="mini-label">미니 창</span>
+      </button>
+      <button type="button" class="sheet-bar__button sheet-bar__button--icon" id="settings-button" aria-label="설정" title="설정">
+        <svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9 M17 7h3 M15 5v4 M4 17h3 M11 17h9 M9 15v4" /></svg>
+      </button>
+    </div>
+    <main id="app"></main>
+  </body>
+</html>

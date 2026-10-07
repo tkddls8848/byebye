@@ -15,7 +15,9 @@
     "cf:types": "wrangler types",
     "worker:dev": "npm run build && wrangler dev",
     "check": "npm run build && wrangler deploy --dry-run",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "mods:overlay": "vite build --config mods/overlay-extension/vite.config.ts && vite build --config mods/overlay-extension/vite.config.ts --mode whale",
+    "mods:desktop": "node mods/desktop-shell/build.mjs"
   },
   "devDependencies": {
     "@types/chrome": "0.3.4",

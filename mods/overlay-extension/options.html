@@ -1,0 +1,63 @@
+<!doctype html>
+<!--
+  사이드 시트 설정. 보스 키 설명과 업무 탭 주소 하나만 다룬다.
+  적은 값은 이 확장의 저장소(chrome.storage.local)에만 남는다.
+-->
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>사이드 시트 설정 · WORKSHEET</title>
+    <script type="module" src="./src/options.ts"></script>
+  </head>
+  <body class="opt">
+    <header class="opt-head">
+      <span class="opt-brand">
+        <svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h10l4 4v14H5z M14 3v5h5 M8 12h8 M8 16h8 M11 10v9" /></svg>
+        WORKSHEET
+      </span>
+      <span class="opt-service">사이드 시트 설정</span>
+    </header>
+
+    <main class="opt-main">
+      <section class="opt-card" aria-labelledby="boss-title">
+        <h2 id="boss-title"><span class="opt-mark"></span>보스 키</h2>
+        <p class="opt-line">
+          지금 단축키 <kbd id="shortcut">확인 중</kbd>
+          <button type="button" class="opt-button" id="shortcut-edit">단축키 바꾸기</button>
+        </p>
+        <ol class="opt-steps">
+          <li>열려 있는 사이드 시트와 미니 창의 수치를 문서 목록으로 가립니다.</li>
+          <li>옆 칸과 미니 창을 닫습니다. 다음에 열면 문서 목록부터 보입니다.</li>
+          <li>아래에 업무 탭 주소를 적어 두었다면 그 탭을 열거나 앞으로 가져옵니다.</li>
+        </ol>
+      </section>
+
+      <section class="opt-card" aria-labelledby="decoy-title">
+        <h2 id="decoy-title"><span class="opt-mark"></span><label for="decoy">업무 탭 주소</label></h2>
+        <p class="opt-help">
+          보스 키를 누르면 열 페이지입니다. 처음에는 새 탭으로 열고, 다음부터는 그 탭을 앞으로 가져옵니다.
+          비워 두면 아무 탭도 열지 않습니다. https 주소만 받습니다.
+        </p>
+        <form id="decoy-form" class="opt-row" novalidate>
+          <input id="decoy" type="url" inputmode="url" placeholder="https://" autocomplete="off" spellcheck="false" aria-describedby="decoy-status" />
+          <button type="submit" class="opt-button opt-button--primary">저장</button>
+          <button type="button" class="opt-button" id="decoy-clear">비우기</button>
+        </form>
+        <p id="decoy-status" class="opt-status" role="status"></p>
+      </section>
+
+      <section class="opt-card" aria-labelledby="privacy-title">
+        <h2 id="privacy-title"><span class="opt-mark"></span>이 확장이 하지 않는 것</h2>
+        <ul class="opt-list">
+          <li>보고 있는 페이지에 코드를 넣거나 그 내용을 읽지 않습니다. 페이지에 붙는 스크립트가 없습니다.</li>
+          <li>다른 사이트의 응답·보안 헤더를 바꾸지 않고, 다른 사이트를 틀에 넣어 보여 주지 않습니다.</li>
+          <li>탭의 주소·제목, 방문 기록, 쿠키를 읽지 않습니다. 그럴 권한을 받지 않았습니다.</li>
+          <li>밖으로 나가는 연결은 예적금 공시를 받는 공개 주소 하나뿐입니다.</li>
+          <li>입력값과 이 설정은 이 확장의 저장소에만 남습니다.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

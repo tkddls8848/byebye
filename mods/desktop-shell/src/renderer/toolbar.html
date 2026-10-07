@@ -1,0 +1,58 @@
+<!doctype html>
+<!--
+  머리줄. 실제 사이트 칸 위에 붙는 우리 화면이다(높이 44px).
+  주소 칸은 실제 사이트의 지금 주소를 줄이지 않고 그대로 보인다 — 지금 어디에
+  있는지 사람이 늘 볼 수 있어야 한다.
+-->
+<html lang="ko" class="tb-root">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light dark" />
+    <title>WORKSHEET 데스크</title>
+    <script type="module" src="./toolbar.ts"></script>
+  </head>
+  <body class="tb-body">
+    <div class="tb" id="bar" role="toolbar" aria-label="WORKSHEET 데스크 도구 모음">
+      <span class="tb-brand">
+        <span class="ws-brand__mark" aria-hidden="true">W</span>
+        <span>WORKSHEET</span>
+        <span class="tb-service">데스크</span>
+      </span>
+      <span class="tb-nav">
+        <button type="button" id="back" aria-label="뒤로" title="뒤로">
+          <svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+        </button>
+        <button type="button" id="forward" aria-label="앞으로" title="앞으로">
+          <svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+        </button>
+        <button type="button" id="reload" aria-label="새로 고침" title="새로 고침">
+          <svg class="ws-icon tb-icon-reload" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3 M19.5 4.5v5h-5" /></svg>
+          <svg class="ws-icon tb-icon-stop" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11 M17.5 6.5l-11 11" /></svg>
+        </button>
+      </span>
+      <form class="tb-address" id="address-form" autocomplete="off">
+        <span class="tb-security" id="security" role="img" aria-label="보안 연결">
+          <svg class="ws-icon tb-icon-lock" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 11h11v9h-11z M9 11V8.5a3 3 0 0 1 6 0V11" /></svg>
+          <svg class="ws-icon tb-icon-warn" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z M12 10v4.5 M12 17.2v.3" /></svg>
+        </span>
+        <span class="tb-field">
+          <input
+            id="address"
+            type="text"
+            inputmode="url"
+            spellcheck="false"
+            autocapitalize="off"
+            aria-label="지금 열린 사이트 주소"
+          />
+          <span class="tb-url" id="url-view" aria-hidden="true"></span>
+        </span>
+        <span class="tb-failure" id="failure" role="status" hidden></span>
+      </form>
+      <button type="button" class="tb-pane" id="pane" aria-pressed="true">
+        <svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z M14 5v14 M16.5 9h1.5 M16.5 12h1.5" /></svg>
+        <span>시트</span>
+        <kbd id="boss-key" hidden></kbd>
+      </button>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,67 @@
+/*
+ * 머리줄. WORKSHEET 머리글(.ws-header)과 같은 색 토큰(--ws-*)을 쓴다.
+ * 창 맨 위 44px 에 붙고, 실제 사이트와는 아랫줄 하나로 나뉜다.
+ */
+/* CSS 는 한 파일로 합쳐져 앱 칸에도 실린다. html·body 를 그냥 고르면 앱 칸의 스크롤까지
+   막으므로 머리줄 문서(.tb-root)로 좁힌다. */
+.tb-root, .tb-root body { height: 100%; overflow: hidden; }
+.tb-body { margin: 0; background: var(--ws-surface); color: var(--ws-text); font-size: 13px; letter-spacing: -0.02em; user-select: none; }
+
+.tb { position: relative; height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 10px 0 14px; border-bottom: 1px solid var(--ws-line); }
+.tb button { font: inherit; border-radius: 4px; transition: background-color 120ms ease, color 120ms ease; }
+.tb button:not(:disabled):hover { filter: none; }
+
+.tb .ws-icon { width: 19px; height: 19px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+/* 머리글 로고 표식(.ws-brand__mark)과 같은 모양. */
+.tb .ws-brand__mark { display: grid; place-items: center; color: var(--ws-brand-text); background: var(--ws-brand); letter-spacing: -2px; padding-right: 2px; }
+.tb-brand { display: flex; align-items: center; gap: 7px; white-space: nowrap; color: var(--ws-text); font: 800 15px/1 Arial, sans-serif; letter-spacing: -0.6px; }
+.tb-brand .ws-brand__mark { width: 24px; height: 24px; font-size: 18px; border-radius: 6px; }
+.tb-service { margin-left: 3px; padding-left: 10px; border-left: 1px solid var(--ws-line-strong); font-weight: 700; font-size: 14px; letter-spacing: -0.4px; }
+
+.tb-nav { display: flex; gap: 2px; margin-left: 6px; }
+.tb-nav button { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; color: var(--ws-text-2); background: transparent; border: 0; }
+.tb-nav button:not(:disabled):hover { background: var(--ws-subtle); color: var(--ws-text); }
+.tb-nav button:disabled { color: var(--ws-line-strong); cursor: default; }
+.tb-nav .ws-icon { width: 17px; height: 17px; }
+.tb-icon-stop { display: none; }
+.tb[data-loading='true'] .tb-icon-reload { display: none; }
+.tb[data-loading='true'] .tb-icon-stop { display: block; }
+
+/* 주소 칸: .ws-search 와 같은 모양. 초점이 없을 때는 호스트를 진하게 그린 겹침 글을 보인다. */
+.tb-address { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; background: var(--ws-subtle); border: 1px solid var(--ws-line); border-radius: 5px; }
+.tb-address:focus-within { background: var(--ws-surface); border-color: var(--ws-accent); outline: 2px solid color-mix(in srgb, var(--ws-brand) 14%, transparent); }
+.tb-security { display: grid; place-items: center; flex-shrink: 0; color: var(--ws-muted); }
+.tb-security .ws-icon { width: 15px; height: 15px; }
+.tb-security[data-scheme='https'] { color: var(--ws-accent); }
+.tb-security[data-scheme='http'], .tb-security[data-scheme='other'] { color: var(--danger); }
+.tb-icon-warn { display: none; }
+.tb-security:not([data-scheme='https']) .tb-icon-lock { display: none; }
+.tb-security:not([data-scheme='https']) .tb-icon-warn { display: block; }
+
+.tb-field { position: relative; flex: 1 1 auto; min-width: 0; display: grid; }
+.tb-field input, .tb-url { grid-area: 1 / 1; min-width: 0; font-family: inherit; font-size: 12.5px; line-height: 1.4; letter-spacing: 0; padding: 0; white-space: nowrap; }
+.tb-field input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ws-text); user-select: text; }
+.tb-field input:not(:focus) { color: transparent; }
+.tb-field input[aria-invalid='true'] { color: var(--danger); }
+.tb-url { overflow: hidden; text-overflow: ellipsis; pointer-events: none; color: var(--ws-text); }
+.tb-field:focus-within .tb-url { visibility: hidden; }
+.tb-url__muted { color: var(--ws-muted); }
+.tb-url__host { color: var(--ws-text); font-weight: 600; }
+.tb-failure { flex-shrink: 0; font-size: 11px; color: var(--danger); white-space: nowrap; }
+
+/* 시트 칸 단추: 펼쳐져 있으면 사이드바의 선택 항목(.ws-nav__item[aria-current])처럼 칠한다. */
+.tb-pane { display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 10px; color: var(--ws-text-2); background: var(--ws-surface); border: 1px solid var(--ws-line-strong); font-weight: 500; white-space: nowrap; cursor: pointer; }
+.tb-pane .ws-icon { width: 16px; height: 16px; }
+.tb-pane[aria-pressed='true'] { color: var(--ws-accent); background: var(--ws-accent-bg); border-color: transparent; font-weight: 700; }
+.tb-pane kbd { font: 10px Arial, sans-serif; color: var(--ws-faint); border: 1px solid var(--ws-line); border-radius: 3px; padding: 1px 4px; font-weight: 400; }
+.tb-pane[aria-pressed='true'] kbd { border-color: color-mix(in srgb, var(--ws-accent) 30%, transparent); color: var(--ws-accent); }
+
+/* 불러오는 중: 머리줄 아랫줄에 가는 띠가 흐른다. */
+.tb::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, transparent, var(--ws-brand), transparent); background-size: 40% 100%; background-repeat: no-repeat; opacity: 0; }
+.tb[data-loading='true']::after { opacity: 1; animation: tb-loading 1.1s linear infinite; }
+@keyframes tb-loading { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+@media (prefers-reduced-motion: reduce) { .tb[data-loading='true']::after { animation: none; background-size: 100% 100%; opacity: 0.5; } }
+
+@media (max-width: 760px) {
+  .tb-service, .tb-pane kbd { display: none; }
+}

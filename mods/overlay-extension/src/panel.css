@@ -1,0 +1,58 @@
+/*
+ * 옆 칸의 도구 막대.
+ *
+ * 앱 화면 위에 얇게 한 줄을 얹는다. 색은 앱의 --ws-* 값을 그대로 써서 밝은·어두운
+ * 화면을 따라간다. 막대가 늘 보이게 붙이고, 앱의 머리글·옆 메뉴는 막대 높이만큼
+ * 내려 겹치지 않게 한다.
+ */
+.sheet-host {
+  --sheet-bar: 34px;
+  background: var(--ws-page);
+}
+
+.sheet-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: var(--sheet-bar);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px 0 12px;
+  background: var(--ws-subtle);
+  border-bottom: 1px solid var(--ws-line);
+  color: var(--ws-muted);
+  font-size: 11px;
+  letter-spacing: -0.02em;
+}
+.sheet-bar__label { display: flex; align-items: center; gap: 6px; margin-right: auto; color: var(--ws-text-2); font-weight: 500; white-space: nowrap; }
+.sheet-bar__label .ws-icon { width: 14px; height: 14px; color: var(--ws-accent); }
+.sheet-bar__hint { color: var(--ws-faint); white-space: nowrap; }
+.sheet-bar__hint kbd { font: 10px Arial, sans-serif; color: var(--ws-muted); border: 1px solid var(--ws-line); border-radius: 3px; padding: 1px 4px; background: var(--ws-surface); }
+.sheet-bar__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--ws-line-strong);
+  border-radius: 4px;
+  background: var(--ws-surface);
+  color: var(--ws-text-2);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sheet-bar__button .ws-icon { width: 14px; height: 14px; }
+.sheet-bar__button--icon { width: 24px; padding: 0; justify-content: center; }
+.sheet-bar__button:hover { color: var(--ws-text); background: var(--ws-page); }
+.sheet-bar__button:focus-visible { outline: 2px solid var(--ws-brand); outline-offset: 1px; }
+.sheet-bar__button[aria-pressed='true'] { color: var(--ws-accent); border-color: var(--ws-accent); background: var(--ws-accent-bg); }
+
+/* 앱 쪽 자리 맞춤: 막대가 늘 위에 있으니 붙는 머리글과 옆 메뉴를 그만큼 내린다. */
+.sheet-host .workspace { min-height: calc(100dvh - var(--sheet-bar)); }
+.sheet-host .ws-header { top: var(--sheet-bar); }
+.sheet-host .ws-sidebar { top: calc(64px + var(--sheet-bar)); height: calc(100vh - 64px - var(--sheet-bar)); }
+@media (max-width: 700px) {
+  .sheet-host .workspace--menu .ws-sidebar { top: calc(56px + var(--sheet-bar)); height: calc(100dvh - 56px - var(--sheet-bar)); }
+}

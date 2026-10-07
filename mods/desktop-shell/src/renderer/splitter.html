@@ -1,0 +1,24 @@
+<!doctype html>
+<!--
+  칸막이. 실제 사이트와 WORKSHEET 칸 사이의 6px 짜리 우리 화면이다.
+  끌어서 폭을 바꾸고, 두 번 누르면 기본 폭(400px)으로 돌아간다.
+-->
+<html lang="ko" class="sp-root">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light dark" />
+    <title>칸 나누기</title>
+    <script type="module" src="./splitter.ts"></script>
+  </head>
+  <body class="sp-body">
+    <div
+      class="sp"
+      id="split"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="시트 칸 폭 조절"
+      tabindex="0"
+      title="끌어서 폭 조절 · 두 번 누르면 기본 폭"
+    ><span class="sp-grip" aria-hidden="true"></span></div>
+  </body>
+</html>

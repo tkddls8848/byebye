@@ -1,0 +1,17 @@
+{
+  "name": "worksheet-desk",
+  "productName": "WORKSHEET 데스크",
+  "version": "0.1.0",
+  "private": true,
+  "description": "실제 사이트 옆에 WORKSHEET 를 붙여 띄우는 데스크톱 셸",
+  "main": "out/main.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.main.json",
+    "start": "electron .",
+    "e2e": "node e2e.mjs"
+  },
+  "devDependencies": {
+    "electron": "44.6.0"
+  }
+}

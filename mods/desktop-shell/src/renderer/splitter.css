@@ -1,0 +1,10 @@
+/* 칸막이: 평소에는 선 하나, 올리거나 끌면 브랜드 색으로 굵어진다. */
+/* 앱 칸에도 같은 CSS 파일이 실리므로 칸막이 문서(.sp-root)로 좁힌다(toolbar.css 참고). */
+.sp-root, .sp-root body { height: 100%; overflow: hidden; }
+.sp-body { margin: 0; background: var(--ws-surface); }
+.sp { position: relative; height: 100%; cursor: col-resize; outline: none; touch-action: none; }
+.sp::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); background: var(--ws-line-strong); transition: width 120ms ease, background-color 120ms ease; }
+.sp:hover::before, .sp:focus-visible::before, .sp[data-dragging='true']::before { width: 3px; background: var(--ws-brand); }
+.sp-grip { position: absolute; top: 50%; left: 50%; width: 2px; height: 28px; transform: translate(-50%, -50%); border-radius: 2px; background: var(--ws-faint); }
+.sp:hover .sp-grip, .sp[data-dragging='true'] .sp-grip { background: var(--ws-brand-text); }
+@media (prefers-reduced-motion: reduce) { .sp::before { transition: none; } }
