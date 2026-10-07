@@ -19,6 +19,7 @@
  * 둘을 회사 번호(fin_co_no)와 상품 코드(fin_prdt_cd)로 맞붙여야 비로소 "이 상품을
  * 12개월 넣으면 몇 %" 를 말할 수 있다. 그 이음매가 이 파일의 일이다.
  */
+import { host } from './host';
 
 /** 정기예금인가 적금인가. Worker 의 창구 이름과 같은 말을 쓴다. */
 export type ProductKind = 'deposit' | 'saving';
@@ -202,7 +203,7 @@ export function parseDisclosure(kind: ProductKind, group: FinanceGroup, body: un
 
 // --- 받아 오기 ---------------------------------------------------------------
 
-/** 셸의 Worker 가 내주는 창구. */
+/** 셸의 Worker 가 내주는 창구. 확장·데스크톱 셸에서는 공개 주소 앞에 붙는다. */
 const ENDPOINT = '/api/fire/products';
 
 /** 한 권역이 아무리 많아도 여기까지만 받는다. 끝없이 도는 것을 막는 빗장이다. */
@@ -222,7 +223,7 @@ async function page(
   pageNo: number,
 ): Promise<Page> {
   const get = options.fetcher ?? fetch;
-  const url = `${ENDPOINT}?kind=${options.kind}&group=${group}&page=${pageNo}`;
+  const url = `${host().apiBase}${ENDPOINT}?kind=${options.kind}&group=${group}&page=${pageNo}`;
 
   let answer: Response;
   try {

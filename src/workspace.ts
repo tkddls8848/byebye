@@ -1,4 +1,5 @@
 import './workspace.css';
+import { host } from './host';
 
 const disposers = new WeakMap<HTMLElement, () => void>();
 const TITLE = '중장기 운영 계획';
@@ -63,6 +64,22 @@ function button(label: string, symbol: keyof typeof paths, action: () => void, c
   return node;
 }
 
+function setTitle(title: string): void {
+  if (host().setTitle) document.title = title;
+}
+
+let coverHandler: (() => void) | null = null;
+
+/**
+ * 밖에서 수치를 가린다.
+ *
+ * 확장의 단축키나 데스크톱 셸의 보스 키처럼 화면 바깥에서 온 신호를 받는 자리다.
+ * 그려진 작업 공간이 없으면 아무것도 하지 않는다.
+ */
+export function coverWorkspace(): void {
+  coverHandler?.();
+}
+
 export interface WorkspaceContent {
   calculation: HTMLElement;
   products: HTMLElement;
@@ -78,7 +95,7 @@ export function mountWorkspace(root: HTMLElement, content: WorkspaceContent): vo
   const workspace = el('div', 'workspace');
   const header = el('header', 'ws-header');
   const brand = el('a', 'ws-brand');
-  brand.href = '/';
+  brand.href = host().homeHref;
   brand.append(el('span', 'ws-brand__mark', 'W'), el('span', '', 'WORKSHEET'));
   const service = el('span', 'ws-service', '드라이브');
   const search = el('form', 'ws-search');
@@ -215,7 +232,7 @@ export function mountWorkspace(root: HTMLElement, content: WorkspaceContent): vo
   function showList(focus: boolean): void {
     documentView.hidden = true;
     listView.hidden = false;
-    document.title = '내 드라이브 · WORKSHEET';
+    setTitle('내 드라이브 · WORKSHEET');
     saveView(true);
     updateNavigation(true);
     if (focus) listTitle.focus({ preventScroll: true });
@@ -228,7 +245,7 @@ export function mountWorkspace(root: HTMLElement, content: WorkspaceContent): vo
     if (detail && index !== 0) detail.open = true;
     documentView.hidden = false;
     listView.hidden = true;
-    document.title = `${TITLE} · WORKSHEET`;
+    setTitle(`${TITLE} · WORKSHEET`);
     saveView(false);
     updateNavigation(false);
     title.focus({ preventScroll: true });
@@ -256,10 +273,12 @@ export function mountWorkspace(root: HTMLElement, content: WorkspaceContent): vo
     mobileMenu.setAttribute('aria-expanded', 'false');
   }, { signal: events.signal });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { query.value = ''; filterFiles(); showList(false); }
+    if (document.hidden && host().coverOnHidden) { query.value = ''; filterFiles(); showList(false); }
   }, { signal: events.signal });
   let covered = false;
   try { covered = sessionStorage.getItem(COVER_KEY) === 'true'; } catch { /* keep sheet available */ }
   if (covered) showList(false);
-  else { document.title = `${TITLE} · WORKSHEET`; updateNavigation(false); }
+  else { setTitle(`${TITLE} · WORKSHEET`); updateNavigation(false); }
+  coverHandler = () => { query.value = ''; filterFiles(); showList(false); };
+  events.signal.addEventListener('abort', () => { coverHandler = null; });
 }

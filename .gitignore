@@ -8,3 +8,8 @@ dist/
 coverage/
 *.log
 .DS_Store
+
+# 확장·데스크톱 셸 빌드 결과
+dist-mods/
+mods/*/node_modules/
+mods/*/out/

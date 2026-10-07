@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
+import { configureHost, resetHost } from './host';
 import { ProductsError, fetchProducts, parseDisclosure } from './products';
 
 /** 공시 응답 한 쪽. 칸 이름은 실제 API 와 같다. */
@@ -213,5 +214,27 @@ describe('fetchProducts', () => {
     expect(failures[0]?.group).toBe('savingsbank');
     expect(failures[0]?.error.code).toBe('no_api_key');
     expect(failures[0]?.error.message).toBe('인증키가 설정되지 않았습니다.');
+  });
+});
+
+describe('실린 자리에 따른 API 주소', () => {
+  it('확장·데스크톱 셸에서는 공개 주소 앞에 붙여 묻는다', async () => {
+    configureHost({ apiBase: 'https://byebye.example' });
+    const asked: string[] = [];
+    try {
+      await fetchProducts({
+        kind: 'saving',
+        groups: ['bank'],
+        fetcher: (async (url: string) => {
+          asked.push(url);
+          return new Response(JSON.stringify({ result: { max_page_no: 1, now_page_no: 1, total_count: 0, baseList: [], optionList: [] } }), {
+            headers: { 'content-type': 'application/json' },
+          });
+        }) as unknown as typeof fetch,
+      });
+    } finally {
+      resetHost();
+    }
+    expect(asked).toEqual(['https://byebye.example/api/fire/products?kind=saving&group=bank&page=1']);
   });
 });

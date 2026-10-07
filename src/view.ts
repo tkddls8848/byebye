@@ -17,6 +17,7 @@ import { FireInput, FireResult, calculate, defaultInput } from './model';
 import { mountProducts } from './products-view';
 import { PLAN_ASSETS, PLAN_LABEL, planError, withoutPlans } from './product-plan';
 import { SHARE_PARAM, decodeShare, encodeShare, shareMeta } from './share';
+import { host } from './host';
 
 const STORAGE_KEY = 'fire-input-v1';
 
@@ -650,7 +651,8 @@ function drawResult(root: HTMLElement, input: FireInput, result: FireResult, cha
 
 /** 지금 화면의 결과를 그대로 여는 주소. */
 function shareUrl(input: FireInput): string {
-  const url = new URL(location.pathname, location.origin);
+  const base = host().shareBase;
+  const url = base ? new URL('/', base) : new URL(location.pathname, location.origin);
   url.searchParams.set(SHARE_PARAM, encodeShare(input));
   return url.toString();
 }
@@ -940,7 +942,9 @@ function chart(input: FireInput, result: FireResult): HTMLElement {
  * 뜨면 링크를 보낸 뜻이 없어진다. 담긴 게 없을 때만 이 브라우저에 남은 것을 쓴다.
  */
 function load(): { input: FireInput; shared: boolean } {
-  const shared = decodeShare(new URLSearchParams(location.search).get(SHARE_PARAM));
+  const shared = host().readShareFromUrl
+    ? decodeShare(new URLSearchParams(location.search).get(SHARE_PARAM))
+    : null;
   if (shared) return { input: shared, shared: true };
 
   const fallback = defaultInput();
@@ -962,6 +966,7 @@ function load(): { input: FireInput; shared: boolean } {
  * 않다. 그대로 두면 그 주소를 다시 퍼뜨릴 때 남의 숫자를 내 것처럼 보내게 된다.
  */
 function forgetSharedUrl(): void {
+  if (!host().readShareFromUrl) return;
   const url = new URL(location.href);
   if (!url.searchParams.has(SHARE_PARAM)) return;
   url.searchParams.delete(SHARE_PARAM);

@@ -1,0 +1,43 @@
+<!doctype html>
+<!--
+  확장 시험용 가짜 검색 결과 페이지.
+
+  컨테이너에서는 실제 포털에 접속할 수 없어서, 주입 위치를 찾는 데 쓰는
+  칸 이름(#main_pack 본문, #sub_pack 오른쪽 칸)만 흉내 낸다. 어느 회사의 로고·
+  이름·고유색도 쓰지 않는다. 배포하지 않으며 시험에만 쓴다.
+-->
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>테스트용 검색 결과</title>
+    <style>
+      body { margin: 0; font: 14px/1.6 system-ui, sans-serif; background: #f3f4f6; color: #222; }
+      header { background: #fff; border-bottom: 1px solid #ddd; padding: 14px 24px; display: flex; gap: 16px; align-items: center; }
+      header strong { font-size: 18px; color: #444; }
+      header input { flex: 0 1 520px; padding: 9px 14px; border: 2px solid #888; border-radius: 22px; font: inherit; }
+      #wrap { display: flex; gap: 24px; max-width: 1180px; margin: 0 auto; padding: 20px 24px; }
+      #main_pack { flex: 1 1 auto; min-width: 0; }
+      #sub_pack { flex: 0 0 360px; }
+      .item { background: #fff; border: 1px solid #e3e3e3; border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; }
+      .item a { color: #1a4fb5; font-size: 16px; text-decoration: none; }
+      .item p { margin: 6px 0 0; color: #555; }
+      .side { background: #fff; border: 1px solid #e3e3e3; border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; }
+      .private { color: #777; }
+    </style>
+  </head>
+  <body>
+    <header><strong>테스트 포털</strong><input type="search" value="은퇴 자금 계산" aria-label="검색어" /></header>
+    <div id="wrap">
+      <main id="main_pack">
+        <div class="item"><a href="#">은퇴 자금, 얼마나 필요할까</a><p>테스트용 검색 결과 문단입니다.</p></div>
+        <div class="item"><a href="#">예적금 금리 비교 방법</a><p>테스트용 검색 결과 문단입니다.</p></div>
+        <div class="item"><a href="#">4% 인출 규칙 정리</a><p>테스트용 검색 결과 문단입니다.</p></div>
+        <div class="item private" id="secret-text">이 문단은 확장이 읽으면 안 되는 페이지 내용입니다: SECRET-PAGE-TEXT</div>
+      </main>
+      <aside id="sub_pack">
+        <div class="side">관련 검색어 · 테스트 1 · 테스트 2</div>
+      </aside>
+    </div>
+  </body>
+</html>
