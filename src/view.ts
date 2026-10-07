@@ -477,6 +477,30 @@ function headline(input: FireInput, result: FireResult): string {
   return `조건 충족 시점은 ${when}으로, 목표 ${Math.round(input.retireAge)}세 이후입니다.`;
 }
 
+/** 목표 나이에 모일 자산이 필요액의 몇 %인지 막대로 보여 준다. */
+function progress(input: FireInput, result: FireResult): HTMLElement {
+  const ratio = result.targetAtRetire > 0 ? result.assetsAtRetire / result.targetAtRetire : 1;
+  const percent = Math.round(Math.max(0, ratio) * 100);
+  const wrap = create('div', 'verdict__progress');
+  const head = create('div', 'verdict__progress-head');
+  head.append(
+    create('span', '', `${Math.round(input.retireAge)}세 기준 필요액 대비`),
+    create('strong', '', `${percent.toLocaleString()}%`),
+  );
+  const bar = create('div', 'verdict__bar');
+  bar.setAttribute('role', 'meter');
+  bar.setAttribute('aria-label', '필요액 대비 예상 자산');
+  bar.setAttribute('aria-valuemin', '0');
+  bar.setAttribute('aria-valuemax', '100');
+  bar.setAttribute('aria-valuenow', String(Math.min(percent, 100)));
+  bar.setAttribute('aria-valuetext', `${percent}%`);
+  const fill = create('span', 'verdict__fill');
+  fill.style.width = `${Math.min(percent, 100)}%`;
+  bar.append(fill);
+  wrap.append(head, bar);
+  return wrap;
+}
+
 function statTile(label: string, value: string, note?: string): HTMLElement {
   const tile = create('div', 'stat');
   tile.append(create('span', 'stat__label', label));
@@ -496,6 +520,8 @@ function drawResult(root: HTMLElement, input: FireInput, result: FireResult, cha
   box.append(create('p', 'ws-result-caption', '검토 결과 / 현재 시나리오'));
   box.append(create('strong', 'verdict__badge', verdict.badge));
   box.append(create('p', 'verdict__line', headline(input, result)));
+  box.append(progress(input, result));
+  box.setAttribute('aria-live', 'polite');
 
   const stats = create('div', 'stats');
   stats.append(
@@ -788,6 +814,11 @@ function chart(input: FireInput, result: FireResult): HTMLElement {
     );
   }
 
+  const baseline = (height - bottom).toFixed(1);
+  add('path', {
+    d: `${line((p) => p.assets)} L${x(maxAge).toFixed(1)} ${baseline} L${x(minAge).toFixed(1)} ${baseline} Z`,
+    class: 'chart__area',
+  });
   add('path', { d: line((p) => p.target), class: 'chart__line chart__line--target' });
   add('path', { d: line((p) => p.assets), class: 'chart__line chart__line--assets' });
 
@@ -816,7 +847,59 @@ function chart(input: FireInput, result: FireResult): HTMLElement {
     });
   }
 
-  figure.append(svg);
+  // 마우스나 화살표 키로 짚은 나이의 값을 보여 준다.
+  const cursor = add('line', { y1: String(top), y2: String(height - bottom), class: 'chart__cursor' });
+  const cursorDot = add('circle', { r: '4', class: 'chart__cursor-dot' });
+  const tip = create('div', 'chart__tip');
+  tip.setAttribute('aria-hidden', 'true');
+  const plot = create('div', 'chart__plot');
+  plot.append(svg, tip);
+  let index = -1;
+  const show = (next: number): void => {
+    index = Math.max(0, Math.min(points.length - 1, next));
+    const point = points[index]!;
+    const px = x(point.age);
+    cursor.setAttribute('x1', px.toFixed(1));
+    cursor.setAttribute('x2', px.toFixed(1));
+    cursorDot.setAttribute('cx', px.toFixed(1));
+    cursorDot.setAttribute('cy', y(point.assets).toFixed(1));
+    tip.replaceChildren(
+      create('strong', '', `${Math.floor(point.age)}세`),
+      create('span', 'chart__tip-assets', `자산 ${formatMan(point.assets)}`),
+      create('span', 'chart__tip-target', `필요액 ${formatMan(point.target)}`),
+    );
+    tip.style.left = `${(px / width) * 100}%`;
+    tip.dataset.side = px > width / 2 ? 'left' : 'right';
+    plot.classList.add('chart__plot--active');
+  };
+  const hide = (): void => plot.classList.remove('chart__plot--active');
+  svg.addEventListener('pointermove', (event) => {
+    const box = svg.getBoundingClientRect();
+    if (box.width === 0) return;
+    const age = minAge + (((event.clientX - box.left) / box.width) * width - left) / (width - left - right) * (maxAge - minAge);
+    let nearest = 0;
+    for (let i = 1; i < points.length; i += 1) {
+      if (Math.abs(points[i]!.age - age) < Math.abs(points[nearest]!.age - age)) nearest = i;
+    }
+    show(nearest);
+  });
+  svg.addEventListener('pointerleave', hide);
+  svg.setAttribute('tabindex', '0');
+  svg.addEventListener('focus', () => show(index < 0 ? 0 : index));
+  svg.addEventListener('blur', hide);
+  svg.addEventListener('keydown', (event) => {
+    const yearStep = Math.max(1, Math.round(points.length / Math.max(1, maxAge - minAge)));
+    const moves: Record<string, number> = {
+      ArrowRight: yearStep, ArrowLeft: -yearStep, PageUp: yearStep * 5, PageDown: -yearStep * 5,
+    };
+    if (event.key === 'Home') show(0);
+    else if (event.key === 'End') show(points.length - 1);
+    else if (event.key in moves) show(index + moves[event.key]!);
+    else return;
+    event.preventDefault();
+  });
+
+  figure.append(plot);
   figure.append(
     create(
       'figcaption',

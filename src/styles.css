@@ -23,13 +23,108 @@
   --danger: #b03a30;
   --danger-bg: #fdf1ef;
   --ok: #1b7f4f;
+  --warn: #94621e;
+  /* 업무 문서 껍데기(workspace.css) 색 */
+  --ws-page: #f5f6f8;
+  --ws-surface: #ffffff;
+  --ws-subtle: #f7f8fa;
+  --ws-line: #e7e9ec;
+  --ws-line-strong: #dce0e5;
+  --ws-text: #1f2329;
+  --ws-text-2: #4c525a;
+  --ws-muted: #858b93;
+  --ws-faint: #9aa0a8;
+  --ws-brand: #03c75a;
+  --ws-brand-text: #ffffff;
+  --ws-accent: #008c48;
+  --ws-accent-bg: #eaf8ef;
+  --ws-notice-bg: #f0f8f3;
+  --ws-notice-line: #dcece3;
+  --ws-notice-text: #5c7566;
+  --ws-shadow: 0 1px 2px #1d283008, 0 4px 14px #1d28300a;
+  --ws-tip-bg: #1f2329;
+  --ws-tip-text: #ffffff;
   accent-color: var(--accent);
 }
 
-.boot-screen { padding: 40px; background: #fff; color: #727983; }
-.boot-screen strong { color: #00a850; display: block; margin-bottom: 24px; }
-.boot-screen span { font-size: 22px; color: #333b45; }
-.boot-details { margin: 20px 40px; color: #737b85; font-size: 13px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #121417;
+    --surface: #1b1e22;
+    --text: #e6e8eb;
+    --muted: #9aa1aa;
+    --line: #2c3036;
+    --field: #22262b;
+    --accent: #3ccf7f;
+    --accent-text: #0d1a12;
+    --link: #7fb0ff;
+    --danger: #ff8a7f;
+    --danger-bg: #3a1f1d;
+    --ok: #3ccf7f;
+    --warn: #e5b56a;
+    --ws-page: #121417;
+    --ws-surface: #1b1e22;
+    --ws-subtle: #22262b;
+    --ws-line: #2c3036;
+    --ws-line-strong: #3a3f46;
+    --ws-text: #e6e8eb;
+    --ws-text-2: #c3c8ce;
+    --ws-muted: #9aa1aa;
+    --ws-faint: #7d848d;
+    --ws-brand: #22c06a;
+    --ws-brand-text: #07160d;
+    --ws-accent: #3ccf7f;
+    --ws-accent-bg: #173226;
+    --ws-notice-bg: #16241c;
+    --ws-notice-line: #22392b;
+    --ws-notice-text: #9cc4ab;
+    --ws-shadow: 0 1px 2px #00000040;
+    --ws-tip-bg: #e6e8eb;
+    --ws-tip-text: #121417;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #121417;
+  --surface: #1b1e22;
+  --text: #e6e8eb;
+  --muted: #9aa1aa;
+  --line: #2c3036;
+  --field: #22262b;
+  --accent: #3ccf7f;
+  --accent-text: #0d1a12;
+  --link: #7fb0ff;
+  --danger: #ff8a7f;
+  --danger-bg: #3a1f1d;
+  --ok: #3ccf7f;
+  --warn: #e5b56a;
+  --ws-page: #121417;
+  --ws-surface: #1b1e22;
+  --ws-subtle: #22262b;
+  --ws-line: #2c3036;
+  --ws-line-strong: #3a3f46;
+  --ws-text: #e6e8eb;
+  --ws-text-2: #c3c8ce;
+  --ws-muted: #9aa1aa;
+  --ws-faint: #7d848d;
+  --ws-brand: #22c06a;
+  --ws-brand-text: #07160d;
+  --ws-accent: #3ccf7f;
+  --ws-accent-bg: #173226;
+  --ws-notice-bg: #16241c;
+  --ws-notice-line: #22392b;
+  --ws-notice-text: #9cc4ab;
+  --ws-shadow: 0 1px 2px #00000040;
+  --ws-tip-bg: #e6e8eb;
+  --ws-tip-text: #121417;
+}
+
+.boot-screen { padding: 40px; background: var(--ws-surface); color: var(--ws-muted); }
+.boot-screen strong { color: var(--ws-accent); display: block; margin-bottom: 24px; }
+.boot-screen span { font-size: 22px; color: var(--ws-text); }
+.boot-details { margin: 20px 40px; color: var(--ws-muted); font-size: 13px; }
 
 * { box-sizing: border-box; }
 

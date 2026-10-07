@@ -10,12 +10,13 @@ import type { Man } from './model';
 /** 만원 단위 숫자를 한국 사람이 읽는 대로 적는다. */
 export function formatMan(man: Man): string {
   const value = Math.round(Math.max(0, man));
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(1)}경원`;
+  // 1억 = 1만 만원, 1조 = 1억 만원, 1경 = 1조 만원.
+  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(1)}경원`;
+  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(1)}조원`;
   if (value >= 10_000) {
     const eok = Math.floor(value / 10_000);
     const rest = value % 10_000;
-    const head = eok >= 10_000 ? `${(eok / 10_000).toFixed(1)}조` : `${eok.toLocaleString()}억`;
-    return rest > 0 && eok < 10_000 ? `${head} ${rest.toLocaleString()}만원` : `${head}원`;
+    return rest > 0 ? `${eok.toLocaleString()}억 ${rest.toLocaleString()}만원` : `${eok.toLocaleString()}억원`;
   }
   return `${value.toLocaleString()}만원`;
 }
@@ -23,8 +24,8 @@ export function formatMan(man: Man): string {
 /** 축 눈금처럼 자리가 좁은 곳에 쓰는 짧은 표기. */
 export function formatShort(man: Man): string {
   const value = Math.max(0, man);
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(1)}경`;
-  if (value >= 1_000_000) return `${(value / 100_000_000 * 10_000).toFixed(0)}조`;
+  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(1)}경`;
+  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(value >= 1_000_000_000 ? 0 : 1)}조`;
   if (value >= 10_000) return `${(value / 10_000).toFixed(value >= 100_000 ? 0 : 1)}억`;
   return `${Math.round(value).toLocaleString()}만`;
 }

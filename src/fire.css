@@ -1,9 +1,5 @@
 /* FIRE 계산기. 색과 글꼴은 styles.css 의 것을 그대로 쓴다. */
 
-.fire {
-  --warn: #94621e;
-}
-
 .fire .lede {
   margin-bottom: 1rem;
   font-size: 0.93rem;
@@ -30,7 +26,7 @@
 .fire__input-tab[aria-selected='true'] {
   color: var(--text);
   background: var(--surface);
-  box-shadow: 0 1px 3px #242c2910;
+  box-shadow: var(--ws-shadow);
 }
 
 .fire__auto-note {

@@ -1,5 +1,8 @@
 import './styles.css';
 import { mountFire } from './view';
+import { applySavedTheme } from './workspace';
+
+applySavedTheme();
 
 if (import.meta.env.DEV && location.hash.includes('figmacapture=')) {
   const capture = document.createElement('script');

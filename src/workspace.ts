@@ -23,7 +23,26 @@ const paths = {
   chevron: 'M9 5l7 7-7 7',
   menu: 'M4 6h16 M4 12h16 M4 18h16',
   shield: 'M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6z M8 12l3 3 5-6',
+  sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M12 2v2 M12 20v2 M4.9 4.9l1.4 1.4 M17.7 17.7l1.4 1.4 M2 12h2 M20 12h2 M4.9 19.1l1.4-1.4 M17.7 6.3l1.4-1.4',
+  moon: 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z',
 };
+
+const THEME_KEY = 'worksheet-theme';
+type Theme = 'light' | 'dark';
+
+/** 저장해 둔 화면 밝기를 붙인다. 고른 적이 없으면 운영체제 설정을 따른다. */
+export function applySavedTheme(): void {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved;
+  } catch { /* usable without storage */ }
+}
+
+function currentTheme(): Theme {
+  const chosen = document.documentElement.dataset.theme;
+  if (chosen === 'light' || chosen === 'dark') return chosen;
+  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
 
 export function icon(name: keyof typeof paths): SVGSVGElement {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -66,11 +85,27 @@ export function mountWorkspace(root: HTMLElement, content: WorkspaceContent): vo
   search.setAttribute('role', 'search');
   const query = el('input');
   query.type = 'search';
-  query.placeholder = '문서 이름으로 검색';
+  query.placeholder = '문서 검색';
   query.setAttribute('aria-label', '문서 이름 검색');
   search.append(icon('search'), query);
   const profile = el('div', 'ws-profile');
-  profile.append(el('span', 'ws-profile__name', '개인 작업 공간'), el('span', 'ws-avatar', 'ME'));
+  const theme = el('button', 'ws-theme');
+  theme.type = 'button';
+  const paintTheme = (): void => {
+    const dark = currentTheme() === 'dark';
+    theme.replaceChildren(icon(dark ? 'sun' : 'moon'));
+    theme.setAttribute('aria-label', dark ? '밝은 화면으로 전환' : '어두운 화면으로 전환');
+    theme.title = theme.getAttribute('aria-label')!;
+  };
+  theme.addEventListener('click', () => {
+    const next: Theme = currentTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem(THEME_KEY, next); } catch { /* usable without storage */ }
+    paintTheme();
+  });
+  paintTheme();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintTheme, { signal: events.signal });
+  profile.append(theme, el('span', 'ws-profile__name', '개인 작업 공간'), el('span', 'ws-avatar', 'ME'));
   header.append(brand, service, search, profile);
 
   const sidebar = el('aside', 'ws-sidebar');
@@ -79,6 +114,10 @@ export function mountWorkspace(root: HTMLElement, content: WorkspaceContent): vo
   const nav = el('nav', 'ws-nav');
   nav.setAttribute('aria-label', '문서 탐색');
   const main = el('div', 'ws-main');
+  main.id = 'workspace-main';
+  main.tabIndex = -1;
+  const skip = el('a', 'ws-skip', '본문으로 건너뛰기');
+  skip.href = '#workspace-main';
   const documentView = el('div', 'ws-document');
   const listView = el('section', 'ws-list');
   listView.hidden = true;
@@ -160,7 +199,7 @@ export function mountWorkspace(root: HTMLElement, content: WorkspaceContent): vo
   mobileMenu.setAttribute('aria-label', '메뉴');
   mobileMenu.setAttribute('aria-expanded', 'false');
   header.prepend(mobileMenu);
-  workspace.append(header, sidebar, main);
+  workspace.append(skip, header, sidebar, main);
   root.replaceChildren(workspace);
 
   function saveView(covered: boolean): void {
@@ -207,6 +246,14 @@ export function mountWorkspace(root: HTMLElement, content: WorkspaceContent): vo
   query.addEventListener('input', () => { showList(false); filterFiles(); });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') { event.preventDefault(); query.value = ''; filterFiles(); showList(true); }
+  }, { signal: events.signal });
+  // 모바일 메뉴는 바깥을 누르면 닫는다.
+  document.addEventListener('click', (event) => {
+    if (!workspace.classList.contains('workspace--menu')) return;
+    const target = event.target as Node;
+    if (sidebar.contains(target) || mobileMenu.contains(target)) return;
+    workspace.classList.remove('workspace--menu');
+    mobileMenu.setAttribute('aria-expanded', 'false');
   }, { signal: events.signal });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { query.value = ''; filterFiles(); showList(false); }
